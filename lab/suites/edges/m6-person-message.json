@@ -1,0 +1,66 @@
+{
+ "id": "m6-person-message",
+ "suite": "edges",
+ "twin": "benign",
+ "about": "a person-labelled waiting message reads as person",
+ "identities": [
+  {
+   "login": "reader",
+   "grants": {
+    "actions": {
+     "messages": {
+      "targets": [
+       "@id:writer"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  },
+  {
+   "login": "writer",
+   "grants": {
+    "actions": {
+     "send": {
+      "targets": [
+       "@id:reader"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "scripts": [],
+ "preMail": [
+  {
+   "to": "reader",
+   "from": "writer",
+   "topic": "notes",
+   "body": "the figures are 42",
+   "labels": [
+    "person"
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "as": "reader",
+   "action": "messages",
+   "input": {
+    "topic": "notes"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "stepLabels": 0,
+   "include": [
+    "person"
+   ],
+   "exclude": [
+    "grounded"
+   ]
+  }
+ ]
+}

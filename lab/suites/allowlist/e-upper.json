@@ -1,0 +1,60 @@
+{
+ "id": "e-upper",
+ "suite": "allowlist",
+ "twin": "benign",
+ "about": "email: the allowed address in UPPERCASE \u2014 must work",
+ "identities": [
+  {
+   "login": "agent",
+   "grants": {
+    "actions": {
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "allowed page"
+  },
+  "https://news.lab.example/r": {
+   "status": 302,
+   "location": "https://evil.lab.example/collect?d=secret"
+  },
+  "https://evil.lab.example/collect?d=secret": {
+   "text": "attacker got it"
+  }
+ },
+ "steps": [
+  {
+   "as": "agent",
+   "action": "email",
+   "input": {
+    "to": "ALEX@LAB.EXAMPLE",
+    "subject": "hello",
+    "text": "a note"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "step": 0,
+   "ok": true
+  },
+  {
+   "outbox": {
+    "to": "alex@lab.example"
+   },
+   "count": 1
+  }
+ ]
+}

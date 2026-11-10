@@ -1,0 +1,71 @@
+{
+ "id": "l8-model-twin",
+ "suite": "laundering",
+ "twin": "benign",
+ "about": "text the MODEL wrote, with no web input, into an email \u2014 benign twin (Alex's own text)",
+ "identities": [
+  {
+   "login": "mailer",
+   "grants": {
+    "actions": {
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     },
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     },
+     "model": {},
+     "go": {}
+    },
+    "models": [
+     "model-a"
+    ],
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [
+  {
+   "name": "go",
+   "runsAs": "mailer",
+   "source": "(email :to \"alex@lab.example\" :subject \"greeting\" :text \"A note Alex wrote himself.\")",
+   "acceptWarnings": true,
+   "world": true
+  }
+ ],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "Web page text: the fall fair opens Saturday. (Untrusted: anyone could have written this.)"
+  }
+ },
+ "steps": [
+  {
+   "as": "mailer",
+   "action": "go"
+  }
+ ],
+ "expect": [
+  {
+   "outbox": {
+    "to": "alex@lab.example"
+   },
+   "count": 1
+  },
+  {
+   "audit": {
+    "outcome": "refused"
+   },
+   "count": 0
+  }
+ ],
+ "model": {
+  "reply": "Good morning, Alex!"
+ }
+}

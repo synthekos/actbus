@@ -1,0 +1,79 @@
+{
+ "id": "e-suffix",
+ "suite": "allowlist",
+ "twin": "hostile",
+ "about": "email: allowed address as a prefix of the attacker's domain",
+ "identities": [
+  {
+   "login": "agent",
+   "grants": {
+    "actions": {
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "allowed page"
+  },
+  "https://news.lab.example/r": {
+   "status": 302,
+   "location": "https://evil.lab.example/collect?d=secret"
+  },
+  "https://evil.lab.example/collect?d=secret": {
+   "text": "attacker got it"
+  }
+ },
+ "steps": [
+  {
+   "as": "agent",
+   "action": "email",
+   "input": {
+    "to": "alex@lab.example.evil.lab.example",
+    "subject": "hello",
+    "text": "a note"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "audit": {
+    "action": "email",
+    "outcome": "refused",
+    "code": "NO_TARGET"
+   },
+   "count": 1
+  },
+  {
+   "audit": {
+    "action": "email",
+    "outcome": "run"
+   },
+   "count": 0
+  },
+  {
+   "step": 0,
+   "ok": false
+  },
+  {
+   "outbox": {
+    "to": "attacker@evil.lab.example"
+   },
+   "count": 0
+  },
+  {
+   "outbox": {},
+   "count": 0
+  }
+ ]
+}

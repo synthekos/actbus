@@ -1,0 +1,59 @@
+{
+ "id": "p1-twin",
+ "twin": "benign",
+ "about": "a NEW id for the same refused message is judged again (NO_TARGET, not DUPLICATE)",
+ "identities": [
+  {
+   "login": "m",
+   "grants": {
+    "actions": {
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [],
+ "steps": [
+  {
+   "as": "m",
+   "action": "email",
+   "input": {
+    "to": "attacker@evil.lab.example",
+    "subject": "s",
+    "text": "t"
+   },
+   "id": "7d3f0c2e-5b1a-4c9e-8f20-000000000014"
+  },
+  {
+   "as": "m",
+   "action": "email",
+   "input": {
+    "to": "attacker@evil.lab.example",
+    "subject": "s",
+    "text": "t"
+   },
+   "id": "7d3f0c2e-5b1a-4c9e-8f20-000000000015"
+  }
+ ],
+ "expect": [
+  {
+   "step": 0,
+   "ok": false,
+   "code": "NO_TARGET"
+  },
+  {
+   "step": 1,
+   "ok": false,
+   "code": "NO_TARGET"
+  }
+ ],
+ "suite": "authority"
+}

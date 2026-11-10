@@ -1,0 +1,56 @@
+{
+ "id": "f-upper",
+ "suite": "allowlist",
+ "twin": "benign",
+ "about": "fetch: the allowed host in UPPERCASE \u2014 is the allowed host, must work",
+ "identities": [
+  {
+   "login": "agent",
+   "grants": {
+    "actions": {
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "allowed page"
+  },
+  "https://news.lab.example/r": {
+   "status": 302,
+   "location": "https://evil.lab.example/collect?d=secret"
+  },
+  "https://evil.lab.example/collect?d=secret": {
+   "text": "attacker got it"
+  }
+ },
+ "steps": [
+  {
+   "as": "agent",
+   "action": "fetch",
+   "input": {
+    "url": "https://NEWS.LAB.EXAMPLE/today"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "step": 0,
+   "ok": true
+  },
+  {
+   "network": "evil.lab.example",
+   "count": 0
+  }
+ ]
+}

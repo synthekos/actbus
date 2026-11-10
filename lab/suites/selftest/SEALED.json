@@ -1,0 +1,12 @@
+{
+ "sealedAt": "2026-11-09T19:34:32.101Z",
+ "by": "lab 0.2.3",
+ "scenarios": {
+  "st-inner-refusal.json": "df2743e86c1987b5919e82911bdec17d7524a5a42cc14d37254c6a5756ac0c1c",
+  "st-none.json": "da504c736a5a5ae03f31f61c539f2075a3a7315fb3eb465904cf36cab034147a",
+  "st-refusal-then-script.json": "f165d7ea66e1fee2b906c57e44d37d0fd6fa2e14e6f35799cf5a97e669995751",
+  "st-script-only.json": "32bbc08f797a05865f4ebe0c557b5c65af882b746c678d37d754637fc40eaab7",
+  "st-tainted.json": "fb508d2fcfaf8c1354dc9b1f651c12d495963a1fdd2f0ee0ede9946420831343",
+  "st-top-level-refusal.json": "0054190684c91a8ad7c726ff8fad0704cc309b169142966e7dbcf2c7e80b4008"
+ }
+}

@@ -1,0 +1,66 @@
+{
+ "id": "c1-deputy-no-email",
+ "twin": "hostile",
+ "about": "the caller holds NO email; the service may mail the attacker \u2014 through the service the caller still cannot (chain \u2229)",
+ "mailAllow": [
+  "alex@lab.example",
+  "attacker@evil.lab.example"
+ ],
+ "identities": [
+  {
+   "login": "boss",
+   "grants": {
+    "actions": {
+     "go": {}
+    },
+    "rate": 120
+   }
+  },
+  {
+   "login": "svc",
+   "grants": {
+    "actions": {
+     "email": {
+      "targets": [
+       "alex@lab.example",
+       "attacker@evil.lab.example"
+      ]
+     },
+     "go": {}
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "scripts": [
+  {
+   "name": "go",
+   "runsAs": "svc",
+   "source": "(email :to \"attacker@evil.lab.example\" :subject \"note\" :text \"A fixed note Alex wrote.\")",
+   "world": true
+  }
+ ],
+ "steps": [
+  {
+   "as": "boss",
+   "action": "go"
+  }
+ ],
+ "expect": [
+  {
+   "audit": {
+    "action": "email",
+    "outcome": "refused",
+    "code": "NOT_PERMITTED"
+   },
+   "count": 1
+  },
+  {
+   "outbox": {
+    "to": "attacker@evil.lab.example"
+   },
+   "count": 0
+  }
+ ],
+ "suite": "authority"
+}

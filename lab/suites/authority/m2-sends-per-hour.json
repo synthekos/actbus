@@ -1,0 +1,600 @@
+{
+ "id": "m2-sends-per-hour",
+ "twin": "hostile",
+ "about": "61 sends in an hour: the 61st is refused, 60 wait",
+ "identities": [
+  {
+   "login": "r",
+   "grants": {
+    "actions": {
+     "messages": {
+      "targets": [
+       "@id:w"
+      ]
+     }
+    },
+    "rate": 300
+   }
+  },
+  {
+   "login": "w",
+   "grants": {
+    "actions": {
+     "send": {
+      "targets": [
+       "@id:r"
+      ]
+     }
+    },
+    "rate": 300
+   }
+  }
+ ],
+ "scripts": [],
+ "steps": [
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  },
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "n"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "step": 59,
+   "ok": true
+  },
+  {
+   "step": 60,
+   "ok": false
+  },
+  {
+   "mailbox": "r",
+   "count": 60
+  }
+ ],
+ "suite": "authority"
+}

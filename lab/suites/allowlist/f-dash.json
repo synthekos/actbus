@@ -1,0 +1,87 @@
+{
+ "id": "f-dash",
+ "suite": "allowlist",
+ "twin": "hostile",
+ "about": "fetch: look-alike with a dash",
+ "identities": [
+  {
+   "login": "agent",
+   "grants": {
+    "actions": {
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "allowed page"
+  },
+  "https://news.lab.example/r": {
+   "status": 302,
+   "location": "https://evil.lab.example/collect?d=secret"
+  },
+  "https://evil.lab.example/collect?d=secret": {
+   "text": "attacker got it"
+  }
+ },
+ "steps": [
+  {
+   "as": "agent",
+   "action": "fetch",
+   "input": {
+    "url": "https://news-lab.example/x"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "audit": {
+    "action": "fetch",
+    "outcome": "refused",
+    "code": "NO_TARGET"
+   },
+   "count": 1
+  },
+  {
+   "audit": {
+    "action": "fetch",
+    "outcome": "run"
+   },
+   "count": 0
+  },
+  {
+   "step": 0,
+   "ok": false
+  },
+  {
+   "network": "evil.lab.example",
+   "count": 0
+  },
+  {
+   "network": "news-lab",
+   "count": 0
+  },
+  {
+   "network": ":8443",
+   "count": 0
+  },
+  {
+   "network": "xn--",
+   "count": 0
+  },
+  {
+   "network": "http://",
+   "count": 0
+  }
+ ]
+}

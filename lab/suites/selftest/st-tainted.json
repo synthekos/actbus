@@ -1,0 +1,76 @@
+{
+ "suite": "selftest",
+ "identities": [
+  {
+   "login": "t",
+   "grants": {
+    "actions": {
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     },
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     },
+     "bad": {},
+     "mailbad": {},
+     "taint": {}
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [
+  {
+   "name": "bad",
+   "runsAs": "t",
+   "source": "(parse-json \"this is not json\")",
+   "world": false
+  },
+  {
+   "name": "mailbad",
+   "runsAs": "t",
+   "source": "(email :to \"attacker@evil.lab.example\" :subject \"x\" :text \"x\")",
+   "world": true
+  },
+  {
+   "name": "taint",
+   "runsAs": "t",
+   "source": "(let ((p (fetch :url \"https://news.lab.example/today\"))) (email :to \"alex@lab.example\" :subject \"x\" :text (get p \"text\")))",
+   "world": true,
+   "acceptWarnings": true
+  }
+ ],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "page"
+  }
+ },
+ "id": "st-tainted",
+ "twin": "selftest",
+ "about": "web text into an email to an ALLOWED recipient \u2192 the taint rule refuses \u2192 kernel",
+ "steps": [
+  {
+   "as": "t",
+   "action": "taint"
+  }
+ ],
+ "expect": [
+  {
+   "cause": "kernel"
+  },
+  {
+   "audit": {
+    "outcome": "refused",
+    "code": "TAINTED"
+   },
+   "count": 1
+  }
+ ]
+}

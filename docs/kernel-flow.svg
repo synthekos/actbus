@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 470" role="img" aria-labelledby="ft">
+  <rect x="0" y="0" width="1060" height="470" fill="#ffffff"/><title id="ft">Flow: a key holder or a trigger sends a message to the bus; the bus checks it, runs the action or script; scripts run in a daemon and ask the bus for every action; mailboxes connect identities; everything is written to the audit log.</title>
+  <defs><style>svg{
+  --bg:#f4f5f2; --paper:#ffffff; --ink:#1b2320; --soft:#5b6762; --line:#d3d9d5; --code:#eef2ef;
+  --accent:#1f6e5e; --accent-soft:#dcece7; --warn:#a4561f; --stop:#a33a3a;
+  --l-person:#6c4aa8; --l-device:#56636c; --l-computed:#2c66a8; --l-grounded:#2d7f3a; --l-model:#a3365f; --l-web:#b45a22;
+  --sans:"IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; --cond:"IBM Plex Sans Condensed", "Arial Narrow", sans-serif;
+  --mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+/* svg */
+.b{fill:var(--paper);stroke:var(--ink);stroke-width:1.5} .bk{fill:var(--accent-soft);stroke:var(--accent);stroke-width:1.8} .bq{fill:var(--code);stroke:var(--line);stroke-width:1.2}
+.a{stroke:var(--ink);stroke-width:1.5;fill:none;marker-end:url(#ar)} .ad{stroke:var(--soft);stroke-width:1.3;fill:none;stroke-dasharray:4 3;marker-end:url(#ar2)}
+.t{font-family:var(--cond);font-weight:700;fill:var(--ink)} .ts{font-family:var(--sans);fill:var(--soft)} .tm{font-family:var(--mono);fill:var(--soft)} .ta{font-family:var(--mono);fill:var(--accent)}
+.mk{fill:var(--ink)} .mk2{fill:var(--soft)}
+
+.drawing{}</style>
+    <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="mk"/></marker>
+    <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="mk2"/></marker>
+  </defs>
+  <!-- callers -->
+  <rect x="16" y="40" width="170" height="70" rx="8" class="b"/>
+  <text x="101" y="66" text-anchor="middle" class="t" font-size="14">EUser with a key</text>
+  <text x="101" y="84" text-anchor="middle" class="tm" font-size="10.5">POST /api/act</text>
+  <text x="101" y="99" text-anchor="middle" class="tm" font-size="10.5">{action, input, id?}</text>
+  <rect x="16" y="150" width="170" height="78" rx="8" class="b"/>
+  <text x="101" y="174" text-anchor="middle" class="t" font-size="14">Scheduler</text>
+  <text x="101" y="192" text-anchor="middle" class="tm" font-size="10.5">every N s · at HH:MM</text>
+  <text x="101" y="207" text-anchor="middle" class="tm" font-size="10.5">on: "message", topic</text>
+  <text x="101" y="222" text-anchor="middle" class="tm" font-size="10.5">ticks every 15 s</text>
+  <!-- bus -->
+  <rect x="250" y="30" width="250" height="300" rx="10" class="bk"/>
+  <text x="375" y="56" text-anchor="middle" class="t" font-size="17">The bus (core) checks</text>
+  <g font-size="11">
+    <text x="266" y="84" class="ta">· envelope well-formed</text>
+    <text x="266" y="102" class="ta">· no duplicate id (24 h, on disk)</text>
+    <text x="266" y="120" class="ta">· trace budget (64 msgs)</text>
+    <text x="266" y="138" class="ta">· identity known</text>
+    <text x="266" y="156" class="ta">· action registered (sha pin)</text>
+    <text x="266" y="174" class="ta">· granted, chain intersected</text>
+    <text x="266" y="192" class="ta">· input shape + targets checked</text>
+    <text x="266" y="210" class="ta">· taint: web/model → world? refuse</text>
+    <text x="266" y="228" class="ta">   unless allowTainted</text>
+    <text x="266" y="246" class="ta">· rate per identity</text>
+    <text x="266" y="264" class="ta">· audit on disk FIRST, then run</text>
+  </g>
+  <text x="375" y="300" text-anchor="middle" class="ts" font-size="11.5">fail closed: no audit line → nothing runs</text>
+  <text x="375" y="316" text-anchor="middle" class="ts" font-size="11.5">one trace per run · finish() ends it</text>
+  <path d="M186 75 H248" class="a"/><path d="M186 189 H248" class="a"/>
+  <!-- registered actions -->
+  <rect x="550" y="30" width="250" height="150" rx="8" class="b"/>
+  <text x="675" y="54" text-anchor="middle" class="t" font-size="14">Native actions</text>
+  <text x="576" y="76" class="tm" font-size="10.5">calc · units · date-diff</text>
+  <text x="576" y="92" class="tm" font-size="10.5">read-number · model</text>
+  <text x="576" y="108" class="tm" font-size="10.5">fetch (allow-listed hosts) ◆world</text>
+  <text x="576" y="124" class="tm" font-size="10.5">file-append ◆world · file-read</text>
+  <text x="576" y="140" class="tm" font-size="10.5">email ◆world (outbox → SMTP)</text>
+  <text x="576" y="156" class="tm" font-size="10.5">send · messages (mailboxes)</text>
+  <text x="576" y="172" class="ts" font-size="10">◆world = reaches outside the box</text>
+  <path d="M500 105 H558" class="a"/>
+  <!-- scripts + daemon -->
+  <rect x="560" y="210" width="230" height="120" rx="8" class="b"/>
+  <text x="675" y="234" text-anchor="middle" class="t" font-size="14">Script (PROTEUS-K)</text>
+  <text x="576" y="256" class="tm" font-size="10.5">kind "script", file .pk, sha pin</text>
+  <text x="576" y="272" class="tm" font-size="10.5">runsAs its OWN identity</text>
+  <text x="576" y="288" class="tm" font-size="10.5">reach known at load</text>
+  <text x="576" y="304" class="tm" font-size="10.5">state: remember / remembered</text>
+  <text x="576" y="320" class="tm" font-size="10.5">labels on every value</text>
+  <path d="M500 255 H558" class="a"/>
+  <rect x="840" y="200" width="200" height="140" rx="8" class="bq"/>
+  <text x="940" y="224" text-anchor="middle" class="t" font-size="14">Daemon (one per identity)</text>
+  <text x="852" y="246" class="tm" font-size="10.5">own OS process · empty env</text>
+  <text x="852" y="262" class="tm" font-size="10.5">reads only act/ (permissions)</text>
+  <text x="852" y="278" class="tm" font-size="10.5">256 MB heap · killed at limit</text>
+  <text x="852" y="294" class="tm" font-size="10.5">5 crashes / 10 min → paused</text>
+  <text x="852" y="310" class="tm" font-size="10.5">back-off 1 s → 60 s</text>
+  <text x="852" y="326" class="tm" font-size="10.5">(or in-process, by setting)</text>
+  <path d="M790 260 H838" class="a"/>
+  <path d="M840 300 C 700 380, 520 380, 470 332" class="ad"/>
+  <text x="760" y="372" text-anchor="middle" class="ts" font-size="11">a script's actions go back through the bus</text>
+  <text x="760" y="387" text-anchor="middle" class="ts" font-size="11">(the daemon only asks)</text>
+  <!-- mailboxes -->
+  <rect x="240" y="370" width="272" height="84" rx="8" class="b"/>
+  <text x="375" y="394" text-anchor="middle" class="t" font-size="14">Mailboxes (core-owned)</text>
+  <text x="264" y="414" class="tm" font-size="10.5">one folder per identity</text>
+  <text x="264" y="430" class="tm" font-size="10.5">both sides allow · claimed per trace</text>
+  <text x="264" y="446" class="tm" font-size="10.5">ok → removed · fail → again (3 → dead)</text>
+  <path d="M375 330 V368" class="a"/>
+  <path d="M250 412 C 200 412, 140 300, 101 232" class="ad"/>
+  <text x="96" y="300" text-anchor="middle" class="ts" font-size="10.5">pending &gt; 0</text>
+  <text x="96" y="314" text-anchor="middle" class="ts" font-size="10.5">fires on-message</text>
+  <!-- audit -->
+  <rect x="826" y="40" width="222" height="110" rx="8" class="b"/>
+  <text x="937" y="64" text-anchor="middle" class="t" font-size="14">Audit</text>
+  <text x="838" y="86" class="tm" font-size="10.5">append-only, fsync per line</text>
+  <text x="838" y="102" class="tm" font-size="10.5">run · refused · error · grants</text>
+  <text x="838" y="118" class="tm" font-size="10.5">msg-* · mail-* · trigger-*</text>
+  <text x="838" y="134" class="tm" font-size="10.5">bodies only as sha256 + size</text>
+  <path d="M500 60 C 640 10, 760 20, 824 70" class="ad"/>
+  <!-- ACTBUS docs/kernel-flow.svg — the kernel flow diagram of 5 Nov 2026, corrected 7 Nov 2026: dedupe and audit are durable, the target check is in the bus, internal labels removed. Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0 -->
+</svg>

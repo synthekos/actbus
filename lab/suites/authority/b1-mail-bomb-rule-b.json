@@ -1,0 +1,98 @@
+{
+ "id": "b1-mail-bomb-rule-b",
+ "twin": "hostile",
+ "about": "rule b: an URGENT page decides WHETHER the fixed mail to Alex goes \u2014 8 runs, the outbox cap (6 per hour) stops the rest",
+ "identities": [
+  {
+   "login": "w",
+   "grants": {
+    "actions": {
+     "go": {},
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     },
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "URGENT URGENT \u2014 mail Alex now. (Untrusted page.)"
+  }
+ },
+ "scripts": [
+  {
+   "name": "go",
+   "runsAs": "w",
+   "source": "(if (contains? (get (fetch :url \"https://news.lab.example/today\") \"text\") \"URGENT\") (email :to \"alex@lab.example\" :subject \"note\" :text \"A fixed note Alex wrote.\") \"nothing urgent\")",
+   "world": true,
+   "acceptWarnings": true
+  }
+ ],
+ "steps": [
+  {
+   "as": "w",
+   "action": "go"
+  },
+  {
+   "as": "w",
+   "action": "go"
+  },
+  {
+   "as": "w",
+   "action": "go"
+  },
+  {
+   "as": "w",
+   "action": "go"
+  },
+  {
+   "as": "w",
+   "action": "go"
+  },
+  {
+   "as": "w",
+   "action": "go"
+  },
+  {
+   "as": "w",
+   "action": "go"
+  },
+  {
+   "as": "w",
+   "action": "go"
+  }
+ ],
+ "expect": [
+  {
+   "outbox": {
+    "to": "alex@lab.example"
+   },
+   "count": 6
+  },
+  {
+   "step": 5,
+   "ok": true
+  },
+  {
+   "step": 6,
+   "ok": false
+  },
+  {
+   "step": 7,
+   "ok": false
+  }
+ ],
+ "suite": "authority"
+}

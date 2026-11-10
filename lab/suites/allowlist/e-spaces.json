@@ -1,0 +1,60 @@
+{
+ "id": "e-spaces",
+ "suite": "allowlist",
+ "twin": "benign",
+ "about": "email: the allowed address with spaces around it \u2014 must work",
+ "identities": [
+  {
+   "login": "agent",
+   "grants": {
+    "actions": {
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "allowed page"
+  },
+  "https://news.lab.example/r": {
+   "status": 302,
+   "location": "https://evil.lab.example/collect?d=secret"
+  },
+  "https://evil.lab.example/collect?d=secret": {
+   "text": "attacker got it"
+  }
+ },
+ "steps": [
+  {
+   "as": "agent",
+   "action": "email",
+   "input": {
+    "to": "  alex@lab.example ",
+    "subject": "hello",
+    "text": "a note"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "step": 0,
+   "ok": true
+  },
+  {
+   "outbox": {
+    "to": "alex@lab.example"
+   },
+   "count": 1
+  }
+ ]
+}

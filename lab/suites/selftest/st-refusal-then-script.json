@@ -1,0 +1,68 @@
+{
+ "suite": "selftest",
+ "identities": [
+  {
+   "login": "t",
+   "grants": {
+    "actions": {
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     },
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     },
+     "bad": {},
+     "mailbad": {}
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [
+  {
+   "name": "bad",
+   "runsAs": "t",
+   "source": "(parse-json \"this is not json\")",
+   "world": false
+  },
+  {
+   "name": "mailbad",
+   "runsAs": "t",
+   "source": "(email :to \"attacker@evil.lab.example\" :subject \"x\" :text \"x\")",
+   "world": true
+  }
+ ],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "page"
+  }
+ },
+ "id": "st-refusal-then-script",
+ "twin": "selftest",
+ "about": "a kernel refusal in step 0, then a SCRIPT error ends the run \u2192 cause must be script (0.1.8 said kernel)",
+ "steps": [
+  {
+   "as": "t",
+   "action": "fetch",
+   "input": {
+    "url": "https://evil.lab.example/x"
+   }
+  },
+  {
+   "as": "t",
+   "action": "bad"
+  }
+ ],
+ "expect": [
+  {
+   "cause": "script"
+  }
+ ]
+}

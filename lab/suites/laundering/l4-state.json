@@ -1,0 +1,92 @@
+{
+ "id": "l4-state",
+ "suite": "laundering",
+ "twin": "hostile",
+ "about": "web text REMEMBERED in script state, recalled in the next run, emailed",
+ "identities": [
+  {
+   "login": "mailer",
+   "grants": {
+    "actions": {
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     },
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     },
+     "keep": {},
+     "use": {},
+     "file-append": {
+      "allowTainted": true
+     },
+     "file-read": {}
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [
+  {
+   "name": "keep",
+   "runsAs": "mailer",
+   "source": "(remember note (get (fetch :url \"https://news.lab.example/today\") \"text\"))",
+   "acceptWarnings": true,
+   "world": true
+  },
+  {
+   "name": "use",
+   "runsAs": "mailer",
+   "source": "(email :to \"alex@lab.example\" :subject \"from memory\" :text (remembered note))",
+   "acceptWarnings": true,
+   "world": true
+  }
+ ],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "Web page text: the fall fair opens Saturday. (Untrusted: anyone could have written this.)"
+  }
+ },
+ "steps": [
+  {
+   "as": "mailer",
+   "action": "keep"
+  },
+  {
+   "as": "mailer",
+   "action": "use"
+  }
+ ],
+ "expect": [
+  {
+   "audit": {
+    "action": "email",
+    "outcome": "refused",
+    "code": "TAINTED"
+   },
+   "labelsInclude": [
+    "web"
+   ],
+   "count": ">=1"
+  },
+  {
+   "outbox": {
+    "to": "alex@lab.example"
+   },
+   "count": 0
+  },
+  {
+   "audit": {
+    "action": "email",
+    "outcome": "ok"
+   },
+   "count": 0
+  }
+ ]
+}

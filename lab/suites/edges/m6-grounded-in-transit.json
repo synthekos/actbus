@@ -1,0 +1,67 @@
+{
+ "id": "m6-grounded-in-transit",
+ "suite": "edges",
+ "twin": "hostile",
+ "about": "a waiting message carrying the credential grounded (+web): reading it must hand on web, NEVER grounded",
+ "identities": [
+  {
+   "login": "reader",
+   "grants": {
+    "actions": {
+     "messages": {
+      "targets": [
+       "@id:writer"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  },
+  {
+   "login": "writer",
+   "grants": {
+    "actions": {
+     "send": {
+      "targets": [
+       "@id:reader"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "scripts": [],
+ "preMail": [
+  {
+   "to": "reader",
+   "from": "writer",
+   "topic": "notes",
+   "body": "the figures are 42",
+   "labels": [
+    "grounded",
+    "web"
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "as": "reader",
+   "action": "messages",
+   "input": {
+    "topic": "notes"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "stepLabels": 0,
+   "include": [
+    "web"
+   ],
+   "exclude": [
+    "grounded"
+   ]
+  }
+ ]
+}

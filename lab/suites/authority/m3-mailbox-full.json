@@ -1,0 +1,958 @@
+{
+ "id": "m3-mailbox-full",
+ "twin": "hostile",
+ "about": "100 messages already waiting: one more is refused",
+ "identities": [
+  {
+   "login": "r",
+   "grants": {
+    "actions": {
+     "messages": {
+      "targets": [
+       "@id:w"
+      ]
+     }
+    },
+    "rate": 300
+   }
+  },
+  {
+   "login": "w",
+   "grants": {
+    "actions": {
+     "send": {
+      "targets": [
+       "@id:r"
+      ]
+     }
+    },
+    "rate": 300
+   }
+  }
+ ],
+ "scripts": [],
+ "preMail": [
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "old",
+   "labels": [
+    "person"
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "as": "w",
+   "action": "send",
+   "input": {
+    "to": "@id:r",
+    "topic": "t",
+    "body": "one more"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "step": 0,
+   "ok": false
+  },
+  {
+   "mailbox": "r",
+   "count": 100
+  }
+ ],
+ "suite": "authority"
+}

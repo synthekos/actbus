@@ -1,0 +1,89 @@
+{
+ "id": "l2-across-identities-twin",
+ "suite": "laundering",
+ "twin": "benign",
+ "about": "identity A reads the web and mails it via a mailbox to identity B, which emails it \u2014 benign twin (A holds no fetch, sends its own text)",
+ "identities": [
+  {
+   "login": "writer",
+   "grants": {
+    "actions": {
+     "w": {},
+     "send": {
+      "targets": [
+       "@id:mailer"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  },
+  {
+   "login": "mailer",
+   "grants": {
+    "actions": {
+     "m": {},
+     "messages": {
+      "targets": [
+       "@id:writer"
+      ]
+     },
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [
+  {
+   "name": "w",
+   "runsAs": "writer",
+   "source": "(send :to \"@id:mailer\" :topic \"relay\" :body \"Hello from the writer, no web involved.\")",
+   "acceptWarnings": true,
+   "world": false
+  },
+  {
+   "name": "m",
+   "runsAs": "mailer",
+   "source": "(email :to \"alex@lab.example\" :subject \"relay\" :text (get (first (messages :topic \"relay\")) \"body\"))",
+   "acceptWarnings": true,
+   "world": true
+  }
+ ],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "Web page text: the fall fair opens Saturday. (Untrusted: anyone could have written this.)"
+  }
+ },
+ "steps": [
+  {
+   "as": "writer",
+   "action": "w"
+  },
+  {
+   "as": "mailer",
+   "action": "m"
+  }
+ ],
+ "expect": [
+  {
+   "outbox": {
+    "to": "alex@lab.example"
+   },
+   "count": 1
+  },
+  {
+   "audit": {
+    "outcome": "refused"
+   },
+   "count": 0
+  }
+ ]
+}

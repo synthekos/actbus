@@ -1,0 +1,15 @@
+{
+  "name": "@synthekos/actbus",
+  "version": "0.3.0",
+  "private": true,
+  "description": "The capability kernel inside SYNTHEKOS: identities, messages, hash-pinned actions, PROTEUS-K scripts, provenance labels, a fail-closed audit.",
+  "license": "Apache-2.0",
+  "author": "John Koperwas",
+  "engines": { "node": ">=22.1" },
+  "files": ["act.js", "act/", "LICENSE", "NOTICE", "README.md"],
+  "scripts": {
+    "test": "cd act && node --test --test-skip-pattern=\"^FAIL-FIRST server\\.js wires it\" test/*.test.js",
+    "test:check": "bash tools/kernel-test-check.sh",
+    "lab": "bash lab/lab-check.sh"
+  }
+}

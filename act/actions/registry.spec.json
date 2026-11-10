@@ -1,0 +1,173 @@
+{
+ "actions": [
+  {
+   "name": "calc",
+   "version": "1.1.0",
+   "kind": "native",
+   "file": "calc.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [
+    "rational"
+   ],
+   "input": {
+    "expr": "string"
+   },
+   "timeoutMs": 2000
+  },
+  {
+   "name": "units",
+   "version": "1.1.0",
+   "kind": "native",
+   "file": "units.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [
+    "rational"
+   ],
+   "input": {
+    "value": "string",
+    "from": "string",
+    "to": "string"
+   },
+   "timeoutMs": 2000
+  },
+  {
+   "name": "date-diff",
+   "version": "1.0.0",
+   "kind": "native",
+   "file": "date-diff.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [],
+   "input": {
+    "from": "string",
+    "to": "string",
+    "weekday": "string?"
+   },
+   "timeoutMs": 2000
+  },
+  {
+   "name": "model",
+   "version": "1.0.0",
+   "kind": "model",
+   "file": "model.js",
+   "produces": "model",
+   "world": false,
+   "needs": [],
+   "input": {
+    "model": "string",
+    "prompt": "string",
+    "system": "string?"
+   },
+   "timeoutMs": 120000
+  },
+  {
+   "name": "fetch",
+   "version": "1.2.1",
+   "kind": "tentacle",
+   "file": "fetch.js",
+   "produces": "web",
+   "world": true,
+   "needs": [],
+   "input": {
+    "url": "string"
+   },
+   "timeoutMs": 15000,
+   "targetForm": "fetch-host"
+  },
+  {
+   "name": "file-append",
+   "version": "1.1.0",
+   "kind": "tentacle",
+   "file": "file.js",
+   "produces": "computed",
+   "world": true,
+   "needs": [
+    "fs",
+    "path"
+   ],
+   "input": {
+    "name": "string",
+    "text": "string"
+   },
+   "timeoutMs": 5000
+  },
+  {
+   "name": "file-read",
+   "version": "1.1.0",
+   "kind": "tentacle",
+   "file": "file.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [
+    "fs",
+    "path"
+   ],
+   "input": {
+    "name": "string"
+   },
+   "timeoutMs": 5000
+  },
+  {
+   "name": "read-number",
+   "version": "1.0.0",
+   "kind": "native",
+   "file": "read-number.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [],
+   "input": {
+    "text": "string",
+    "after": "string?"
+   },
+   "timeoutMs": 2000
+  },
+  {
+   "name": "email",
+   "version": "1.0.0",
+   "kind": "tentacle",
+   "file": "email.js",
+   "produces": "computed",
+   "world": true,
+   "needs": [],
+   "input": {
+    "to": "string",
+    "subject": "string",
+    "text": "string"
+   },
+   "timeoutMs": 5000,
+   "targetForm": "email-address"
+  },
+  {
+   "name": "send",
+   "version": "1.0.0",
+   "kind": "tentacle",
+   "file": "send.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [],
+   "input": {
+    "to": "string",
+    "topic": "string",
+    "body": "string"
+   },
+   "timeoutMs": 5000,
+   "targetForm": "identity"
+  },
+  {
+   "name": "messages",
+   "version": "1.1.1",
+   "kind": "tentacle",
+   "file": "messages.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [],
+   "input": {
+    "topic": "string", "ack": "array?", "hold": "boolean?"
+   },
+   "timeoutMs": 5000,
+   "targetForm": "sender"
+  }
+ ]
+}

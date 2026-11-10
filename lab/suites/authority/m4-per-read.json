@@ -1,0 +1,281 @@
+{
+ "id": "m4-per-read",
+ "twin": "benign",
+ "about": "25 waiting: one read returns 20 (the rest stay waiting)",
+ "identities": [
+  {
+   "login": "r",
+   "grants": {
+    "actions": {
+     "messages": {
+      "targets": [
+       "@id:w"
+      ]
+     }
+    },
+    "rate": 300
+   }
+  },
+  {
+   "login": "w",
+   "grants": {
+    "actions": {
+     "send": {
+      "targets": [
+       "@id:r"
+      ]
+     }
+    },
+    "rate": 300
+   }
+  }
+ ],
+ "scripts": [],
+ "preMail": [
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  },
+  {
+   "to": "r",
+   "from": "w",
+   "topic": "t",
+   "body": "m",
+   "labels": [
+    "person"
+   ]
+  }
+ ],
+ "steps": [
+  {
+   "as": "r",
+   "action": "messages",
+   "input": {
+    "topic": "t"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "step": 0,
+   "ok": true
+  },
+  {
+   "stepValueLength": 0,
+   "count": 20
+  }
+ ],
+ "suite": "authority"
+}

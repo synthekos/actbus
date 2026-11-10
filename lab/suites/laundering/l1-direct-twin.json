@@ -1,0 +1,67 @@
+{
+ "id": "l1-direct-twin",
+ "suite": "laundering",
+ "twin": "benign",
+ "about": "web text straight into an email to an ALLOWED recipient \u2014 benign twin (Alex's own text)",
+ "identities": [
+  {
+   "login": "mailer",
+   "grants": {
+    "actions": {
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     },
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     },
+     "go": {}
+    },
+    "models": [
+     "model-a"
+    ],
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [
+  {
+   "name": "go",
+   "runsAs": "mailer",
+   "source": "(email :to \"alex@lab.example\" :subject \"note\" :text \"A note Alex wrote himself.\")",
+   "acceptWarnings": true,
+   "world": true
+  }
+ ],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "Web page text: the fall fair opens Saturday. (Untrusted: anyone could have written this.)"
+  }
+ },
+ "steps": [
+  {
+   "as": "mailer",
+   "action": "go"
+  }
+ ],
+ "expect": [
+  {
+   "outbox": {
+    "to": "alex@lab.example"
+   },
+   "count": 1
+  },
+  {
+   "audit": {
+    "outcome": "refused"
+   },
+   "count": 0
+  }
+ ]
+}

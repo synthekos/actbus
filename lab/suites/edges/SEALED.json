@@ -1,0 +1,10 @@
+{
+ "sealedAt": "2026-11-09T19:34:32.042Z",
+ "by": "lab 0.2.3",
+ "scenarios": {
+  "m6-grounded-in-transit.json": "31be661aa36bcd88ecdeccd79ca247407d170eefa05223813a31de8aabdfd647",
+  "m6-person-message.json": "84c5ee38780520844acc761880b210eb7f6f85fa8fe9b9c9a612d03b4f63a1fc",
+  "m7-no-sidecar.json": "b8301ec4d1f2e6219875e525f9c60faeda450dc53d80fc2382dbc2a21c0bff53",
+  "m7-person-sidecar.json": "158fb7c9943bccd6576a4d3a57ad23bef3e34d72ae194cf3a16b832ca876353c"
+ }
+}

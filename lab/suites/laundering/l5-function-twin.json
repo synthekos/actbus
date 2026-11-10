@@ -1,0 +1,67 @@
+{
+ "id": "l5-function-twin",
+ "suite": "laundering",
+ "twin": "benign",
+ "about": "web text washed through a (define \u2026) function \u2014 benign twin (Alex's own text)",
+ "identities": [
+  {
+   "login": "mailer",
+   "grants": {
+    "actions": {
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     },
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     },
+     "go": {}
+    },
+    "models": [
+     "model-a"
+    ],
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [
+  {
+   "name": "go",
+   "runsAs": "mailer",
+   "source": "(define (wash x) (str \"Clean summary: \" (upper (trim x))))\n(email :to \"alex@lab.example\" :subject \"note\" :text (wash \"A note Alex wrote himself.\"))",
+   "acceptWarnings": true,
+   "world": true
+  }
+ ],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "Web page text: the fall fair opens Saturday. (Untrusted: anyone could have written this.)"
+  }
+ },
+ "steps": [
+  {
+   "as": "mailer",
+   "action": "go"
+  }
+ ],
+ "expect": [
+  {
+   "outbox": {
+    "to": "alex@lab.example"
+   },
+   "count": 1
+  },
+  {
+   "audit": {
+    "outcome": "refused"
+   },
+   "count": 0
+  }
+ ]
+}

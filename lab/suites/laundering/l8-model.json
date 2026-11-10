@@ -1,0 +1,76 @@
+{
+ "id": "l8-model",
+ "suite": "laundering",
+ "twin": "hostile",
+ "about": "text the MODEL wrote, with no web input, into an email",
+ "identities": [
+  {
+   "login": "mailer",
+   "grants": {
+    "actions": {
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     },
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     },
+     "model": {},
+     "go": {}
+    },
+    "models": [
+     "model-a"
+    ],
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [
+  {
+   "name": "go",
+   "runsAs": "mailer",
+   "source": "(email :to \"alex@lab.example\" :subject \"greeting\" :text (get (model :model \"model-a\" :prompt \"Write a one-line greeting for Alex.\") \"text\"))",
+   "acceptWarnings": true,
+   "world": true
+  }
+ ],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "Web page text: the fall fair opens Saturday. (Untrusted: anyone could have written this.)"
+  }
+ },
+ "steps": [
+  {
+   "as": "mailer",
+   "action": "go"
+  }
+ ],
+ "expect": [
+  {
+   "audit": {
+    "action": "email",
+    "outcome": "refused",
+    "code": "TAINTED"
+   },
+   "labelsInclude": [
+    "model"
+   ],
+   "count": ">=1"
+  },
+  {
+   "outbox": {
+    "to": "alex@lab.example"
+   },
+   "count": 0
+  }
+ ],
+ "model": {
+  "reply": "Good morning, Alex!"
+ }
+}

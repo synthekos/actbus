@@ -1,0 +1,187 @@
+{
+ "approved": "2026-11-06T17:32:40.295Z",
+ "actions": [
+  {
+   "name": "calc",
+   "version": "1.1.0",
+   "kind": "native",
+   "file": "calc.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [
+    "rational"
+   ],
+   "input": {
+    "expr": "string"
+   },
+   "timeoutMs": 2000,
+   "sha256": "e54fbc35e393878e505e99084298705ac0e5dc753f34805a63935281b6070f0d"
+  },
+  {
+   "name": "units",
+   "version": "1.1.0",
+   "kind": "native",
+   "file": "units.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [
+    "rational"
+   ],
+   "input": {
+    "value": "string",
+    "from": "string",
+    "to": "string"
+   },
+   "timeoutMs": 2000,
+   "sha256": "cc13fcfd02c8c0a8053e0195343f08e686ed1e94bdfd9681bc1169d18558d26c"
+  },
+  {
+   "name": "date-diff",
+   "version": "1.0.0",
+   "kind": "native",
+   "file": "date-diff.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [],
+   "input": {
+    "from": "string",
+    "to": "string",
+    "weekday": "string?"
+   },
+   "timeoutMs": 2000,
+   "sha256": "89253d22debd5c6d2970ff3bb697a867eb59a4bde0beb85f0a5c00cf3475baff"
+  },
+  {
+   "name": "model",
+   "version": "1.0.0",
+   "kind": "model",
+   "file": "model.js",
+   "produces": "model",
+   "world": false,
+   "needs": [],
+   "input": {
+    "model": "string",
+    "prompt": "string",
+    "system": "string?"
+   },
+   "timeoutMs": 120000,
+   "sha256": "68c89d66ce418c98eb3e7682b60134d03e51869591c9417e9b8602c9eef582ca"
+  },
+  {
+   "name": "fetch",
+   "version": "1.2.1",
+   "kind": "tentacle",
+   "file": "fetch.js",
+   "produces": "web",
+   "world": true,
+   "needs": [],
+   "input": {
+    "url": "string"
+   },
+   "timeoutMs": 15000,
+   "targetForm": "fetch-host",
+   "sha256": "b9dd957d59f7e9700c2a87c91bcfa982f27256fc56515d6a138d3ed29c129bb1"
+  },
+  {
+   "name": "file-append",
+   "version": "1.1.0",
+   "kind": "tentacle",
+   "file": "file.js",
+   "produces": "computed",
+   "world": true,
+   "needs": [
+    "fs",
+    "path"
+   ],
+   "input": {
+    "name": "string",
+    "text": "string"
+   },
+   "timeoutMs": 5000,
+   "sha256": "ae50e09eeff800128898815871e9c7d71899c0fa64bbbb23c8b581f825ae80a2"
+  },
+  {
+   "name": "file-read",
+   "version": "1.1.0",
+   "kind": "tentacle",
+   "file": "file.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [
+    "fs",
+    "path"
+   ],
+   "input": {
+    "name": "string"
+   },
+   "timeoutMs": 5000,
+   "sha256": "ae50e09eeff800128898815871e9c7d71899c0fa64bbbb23c8b581f825ae80a2"
+  },
+  {
+   "name": "read-number",
+   "version": "1.0.0",
+   "kind": "native",
+   "file": "read-number.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [],
+   "input": {
+    "text": "string",
+    "after": "string?"
+   },
+   "timeoutMs": 2000,
+   "sha256": "993312b7a45bf7b0a8f8f070888db8c1e7bd2fcb295da403b5be4c509db710d5"
+  },
+  {
+   "name": "email",
+   "version": "1.0.0",
+   "kind": "tentacle",
+   "file": "email.js",
+   "produces": "computed",
+   "world": true,
+   "needs": [],
+   "input": {
+    "to": "string",
+    "subject": "string",
+    "text": "string"
+   },
+   "timeoutMs": 5000,
+   "targetForm": "email-address",
+   "sha256": "baf4ef577f348225b0a494eb1452b110dfa4c03ad5fa639fb7824ea40c433183"
+  },
+  {
+   "name": "send",
+   "version": "1.0.0",
+   "kind": "tentacle",
+   "file": "send.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [],
+   "input": {
+    "to": "string",
+    "topic": "string",
+    "body": "string"
+   },
+   "timeoutMs": 5000,
+   "targetForm": "identity",
+   "sha256": "e5fa5c2bf8918c21150c5ca6594a1cbff247341f38acf08395ffb74eb42f75c6"
+  },
+  {
+   "name": "messages",
+   "version": "1.1.1",
+   "kind": "tentacle",
+   "file": "messages.js",
+   "produces": "computed",
+   "world": false,
+   "needs": [],
+   "input": {
+    "topic": "string",
+    "ack": "array?",
+    "hold": "boolean?"
+   },
+   "timeoutMs": 5000,
+   "targetForm": "sender",
+   "sha256": "69c0aeba6ae1fbe493c4a67ec40e8b400975e99dbe01d4ca172d90fe0de62195"
+  }
+ ]
+}

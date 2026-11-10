@@ -1,0 +1,56 @@
+{
+ "id": "f-redirect",
+ "suite": "allowlist",
+ "twin": "hostile",
+ "about": "fetch: the allowed host redirects to the attacker \u2014 must not be followed",
+ "identities": [
+  {
+   "login": "agent",
+   "grants": {
+    "actions": {
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "allowed page"
+  },
+  "https://news.lab.example/r": {
+   "status": 302,
+   "location": "https://evil.lab.example/collect?d=secret"
+  },
+  "https://evil.lab.example/collect?d=secret": {
+   "text": "attacker got it"
+  }
+ },
+ "steps": [
+  {
+   "as": "agent",
+   "action": "fetch",
+   "input": {
+    "url": "https://news.lab.example/r"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "network": "evil.lab.example",
+   "count": 0
+  },
+  {
+   "network": "news.lab.example/r",
+   "count": 1
+  }
+ ]
+}

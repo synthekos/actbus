@@ -1,0 +1,79 @@
+{
+ "suite": "selftest",
+ "identities": [
+  {
+   "login": "t",
+   "grants": {
+    "actions": {
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     },
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     },
+     "bad": {},
+     "mailbad": {}
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [
+  {
+   "name": "bad",
+   "runsAs": "t",
+   "source": "(parse-json \"this is not json\")",
+   "world": false
+  },
+  {
+   "name": "mailbad",
+   "runsAs": "t",
+   "source": "(email :to \"attacker@evil.lab.example\" :subject \"x\" :text \"x\")",
+   "world": true
+  }
+ ],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "page"
+  }
+ },
+ "id": "st-top-level-refusal",
+ "twin": "selftest",
+ "about": "the step's own action is denied by the KERNEL (kernel 0.53.2: refused NO_TARGET, no run line) \u2192 kernel",
+ "steps": [
+  {
+   "as": "t",
+   "action": "fetch",
+   "input": {
+    "url": "https://evil.lab.example/x"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "cause": "kernel"
+  },
+  {
+   "audit": {
+    "action": "fetch",
+    "outcome": "refused",
+    "code": "NO_TARGET"
+   },
+   "count": 1
+  },
+  {
+   "audit": {
+    "action": "fetch",
+    "outcome": "run"
+   },
+   "count": 0
+  }
+ ]
+}

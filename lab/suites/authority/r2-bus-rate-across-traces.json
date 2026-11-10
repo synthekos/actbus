@@ -1,0 +1,64 @@
+{
+ "id": "r2-bus-rate-across-traces",
+ "twin": "hostile",
+ "about": "a service at rate 3 called twice (2 traces \u00d7 2 calls): its 4th message is refused RATE by the BUS, audited",
+ "identities": [
+  {
+   "login": "boss",
+   "grants": {
+    "actions": {
+     "go": {},
+     "calc": {}
+    },
+    "rate": 120
+   }
+  },
+  {
+   "login": "svc",
+   "grants": {
+    "actions": {
+     "go": {},
+     "calc": {}
+    },
+    "rate": 3
+   }
+  }
+ ],
+ "scripts": [
+  {
+   "name": "go",
+   "runsAs": "svc",
+   "source": "(do (calc :expr \"1+1\") (calc :expr \"2+2\"))",
+   "world": false
+  }
+ ],
+ "steps": [
+  {
+   "as": "boss",
+   "action": "go"
+  },
+  {
+   "as": "boss",
+   "action": "go"
+  }
+ ],
+ "expect": [
+  {
+   "step": 0,
+   "ok": true
+  },
+  {
+   "step": 1,
+   "ok": false
+  },
+  {
+   "audit": {
+    "action": "calc",
+    "outcome": "refused",
+    "code": "RATE"
+   },
+   "count": 1
+  }
+ ],
+ "suite": "authority"
+}

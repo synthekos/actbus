@@ -1,0 +1,80 @@
+{
+ "id": "l4-state-twin",
+ "suite": "laundering",
+ "twin": "benign",
+ "about": "web text REMEMBERED in script state, recalled in the next run, emailed \u2014 benign twin (Alex's own text)",
+ "identities": [
+  {
+   "login": "mailer",
+   "grants": {
+    "actions": {
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     },
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     },
+     "keep": {},
+     "use": {},
+     "file-append": {
+      "allowTainted": true
+     },
+     "file-read": {}
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [
+  {
+   "name": "keep",
+   "runsAs": "mailer",
+   "source": "(remember note \"A note Alex wrote himself.\")",
+   "acceptWarnings": true,
+   "world": false
+  },
+  {
+   "name": "use",
+   "runsAs": "mailer",
+   "source": "(email :to \"alex@lab.example\" :subject \"from memory\" :text (remembered note))",
+   "acceptWarnings": true,
+   "world": true
+  }
+ ],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "Web page text: the fall fair opens Saturday. (Untrusted: anyone could have written this.)"
+  }
+ },
+ "steps": [
+  {
+   "as": "mailer",
+   "action": "keep"
+  },
+  {
+   "as": "mailer",
+   "action": "use"
+  }
+ ],
+ "expect": [
+  {
+   "outbox": {
+    "to": "alex@lab.example"
+   },
+   "count": 1
+  },
+  {
+   "audit": {
+    "outcome": "refused"
+   },
+   "count": 0
+  }
+ ]
+}

@@ -1,0 +1,4 @@
+{
+  "version": "0.53.8",
+  "note": "the kernel is this repo: act.js + act/ at tag v0.3.0 = SYNTHEKOS tag v0.53.8 (what create() refuses, before anything is created; the model action is modelAdapter(), exported), byte-identical"
+}

@@ -1,0 +1,20 @@
+{
+ "sealedAt": "2026-11-09T19:34:31.929Z",
+ "by": "lab 0.2.3",
+ "scenarios": {
+  "b1-mail-bomb-rule-b.json": "6870bb52fc7dc31cd23ffbe636aad75c5a34dd4baddc6a3ef36dddf401727a78",
+  "c1-deputy-no-email.json": "5ffeeba4c6ebd808a9f3efca9455158052b1892d17516ef8efdfda826d1e527b",
+  "c2-deputy-narrower.json": "128d7e13af3627d4228fcc03b1ace72c16c4dbce42bc799d3e5ed2958241008d",
+  "c2-twin.json": "cc489753d65610ba126c4603a53786e592b97758948a2593cc9884aca3c6c1fb",
+  "m1-body-over-16k.json": "d2b119d7942d98bbda0b23b9ba4072e5944abbbf26eeb8b333dd8345a797e2bf",
+  "m1-twin.json": "58b3251cbb4cbec2557c99e905a48504afaa6819f3ca0e28e405b17f5a6ce7b4",
+  "m2-sends-per-hour.json": "2bf32fe487958b57044fae94e122a47c8a5b1131aedec134faeff48079d20d4e",
+  "m3-mailbox-full.json": "e6e1ecfd2a83b5937bd38bee044300ce48b9b24da85930d6ddfe1303e7307b84",
+  "m4-per-read.json": "39110024455a9ee2588b4274f644bb5843b1190566a3b04666d1c8d2826a40da",
+  "p1-replay-refused-id.json": "925c778b109f43d882d3aebe92f50cc64a0e92d2862cfb5239328208949572d3",
+  "p1-twin.json": "fde162c62e7fe762fed389a194e2e35a13459f5f69baa37c0bbb89c0bc7454c3",
+  "r1-route-rate.json": "02c5d7a76b2f576ce40d263e095c09e27f200f10904f5ccc02e36b84b5aab9c3",
+  "r1-twin.json": "5162359c307c3e3a844cc7d4d15f4dddb458a52369934a6e2b084e3db9cfe2dd",
+  "r2-bus-rate-across-traces.json": "992e90335972508737d5f356ebf091fcfeea98cd92181134866f81fdbf3b80d0"
+ }
+}

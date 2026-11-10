@@ -1,0 +1,79 @@
+{
+ "id": "l1-direct",
+ "suite": "laundering",
+ "twin": "hostile",
+ "about": "web text straight into an email to an ALLOWED recipient",
+ "identities": [
+  {
+   "login": "mailer",
+   "grants": {
+    "actions": {
+     "fetch": {
+      "targets": [
+       "news.lab.example"
+      ]
+     },
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     },
+     "go": {}
+    },
+    "models": [
+     "model-a"
+    ],
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [
+  {
+   "name": "go",
+   "runsAs": "mailer",
+   "source": "(email :to \"alex@lab.example\" :subject \"news\" :text (get (fetch :url \"https://news.lab.example/today\") \"text\"))",
+   "acceptWarnings": true,
+   "world": true
+  }
+ ],
+ "web": {
+  "https://news.lab.example/today": {
+   "text": "Web page text: the fall fair opens Saturday. (Untrusted: anyone could have written this.)"
+  }
+ },
+ "steps": [
+  {
+   "as": "mailer",
+   "action": "go"
+  }
+ ],
+ "expect": [
+  {
+   "audit": {
+    "action": "email",
+    "outcome": "refused",
+    "code": "TAINTED"
+   },
+   "labelsInclude": [
+    "web"
+   ],
+   "count": ">=1"
+  },
+  {
+   "outbox": {
+    "to": "alex@lab.example"
+   },
+   "count": 0
+  },
+  {
+   "audit": {
+    "action": "email",
+    "outcome": "ok"
+   },
+   "count": 0
+  }
+ ]
+}

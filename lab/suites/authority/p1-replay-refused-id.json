@@ -1,0 +1,59 @@
+{
+ "id": "p1-replay-refused-id",
+ "twin": "hostile",
+ "about": "a refused message (NO_TARGET) sent again with the SAME id is refused DUPLICATE \u2014 a refused id cannot be replayed",
+ "identities": [
+  {
+   "login": "m",
+   "grants": {
+    "actions": {
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "mailAllow": [
+  "alex@lab.example"
+ ],
+ "scripts": [],
+ "steps": [
+  {
+   "as": "m",
+   "action": "email",
+   "input": {
+    "to": "attacker@evil.lab.example",
+    "subject": "s",
+    "text": "t"
+   },
+   "id": "7d3f0c2e-5b1a-4c9e-8f20-000000000014"
+  },
+  {
+   "as": "m",
+   "action": "email",
+   "input": {
+    "to": "attacker@evil.lab.example",
+    "subject": "s",
+    "text": "t"
+   },
+   "id": "7d3f0c2e-5b1a-4c9e-8f20-000000000014"
+  }
+ ],
+ "expect": [
+  {
+   "step": 0,
+   "ok": false,
+   "code": "NO_TARGET"
+  },
+  {
+   "step": 1,
+   "ok": false,
+   "code": "DUPLICATE"
+  }
+ ],
+ "suite": "authority"
+}

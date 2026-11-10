@@ -1,0 +1,67 @@
+{
+ "id": "c2-twin",
+ "twin": "benign",
+ "about": "the same chain mailing Alex (granted to both) goes through",
+ "mailAllow": [
+  "alex@lab.example",
+  "attacker@evil.lab.example"
+ ],
+ "identities": [
+  {
+   "login": "boss",
+   "grants": {
+    "actions": {
+     "go": {},
+     "email": {
+      "targets": [
+       "alex@lab.example"
+      ]
+     }
+    },
+    "rate": 120
+   }
+  },
+  {
+   "login": "svc",
+   "grants": {
+    "actions": {
+     "email": {
+      "targets": [
+       "alex@lab.example",
+       "attacker@evil.lab.example"
+      ]
+     },
+     "go": {}
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "scripts": [
+  {
+   "name": "go",
+   "runsAs": "svc",
+   "source": "(email :to \"alex@lab.example\" :subject \"note\" :text \"A fixed note Alex wrote.\")",
+   "world": true
+  }
+ ],
+ "steps": [
+  {
+   "as": "boss",
+   "action": "go"
+  }
+ ],
+ "expect": [
+  {
+   "step": 0,
+   "ok": true
+  },
+  {
+   "outbox": {
+    "to": "alex@lab.example"
+   },
+   "count": 1
+  }
+ ],
+ "suite": "authority"
+}

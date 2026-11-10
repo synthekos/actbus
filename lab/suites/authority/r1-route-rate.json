@@ -1,0 +1,78 @@
+{
+ "id": "r1-route-rate",
+ "twin": "hostile",
+ "about": "an EUser at rate 3: 5 calls \u2014 the 4th and 5th are refused RATE at the route (not audited, by design)",
+ "identities": [
+  {
+   "login": "r",
+   "grants": {
+    "actions": {
+     "calc": {}
+    },
+    "rate": 3
+   }
+  }
+ ],
+ "scripts": [],
+ "steps": [
+  {
+   "as": "r",
+   "action": "calc",
+   "input": {
+    "expr": "1+1"
+   }
+  },
+  {
+   "as": "r",
+   "action": "calc",
+   "input": {
+    "expr": "1+1"
+   }
+  },
+  {
+   "as": "r",
+   "action": "calc",
+   "input": {
+    "expr": "1+1"
+   }
+  },
+  {
+   "as": "r",
+   "action": "calc",
+   "input": {
+    "expr": "1+1"
+   }
+  },
+  {
+   "as": "r",
+   "action": "calc",
+   "input": {
+    "expr": "1+1"
+   }
+  }
+ ],
+ "expect": [
+  {
+   "step": 2,
+   "ok": true
+  },
+  {
+   "step": 3,
+   "ok": false,
+   "code": "RATE"
+  },
+  {
+   "step": 4,
+   "ok": false,
+   "code": "RATE"
+  },
+  {
+   "audit": {
+    "action": "calc",
+    "outcome": "ok"
+   },
+   "count": 3
+  }
+ ],
+ "suite": "authority"
+}
