@@ -7,7 +7,7 @@ These were structured review rounds run by AI sessions reading the code cold: a 
 - Each section is one review, in date order (2026). Its heading says what the kernel's comments call it, so a citation in the code leads here.
 - **A tag belongs to its review.** `H1` in the mailbox review R2 and `H1` in the slice 3 review R-S3 are different findings; `R1` names both a finding of the 2 Nov invariant tests and the 5 Nov review of acknowledged reads. The index at the end resolves every bare tag in the kernel by file.
 - **"Round N" belongs to its release.** Each release reviewed from 6 Nov on had its own rounds.
-- **Tests.** A test under `act/test/` is in this repository. A *host test* is in the reference host's application tests (`test/act*.test.js` in SYNTHEKOS), which are not in this repository; SYNTHEKOS's release checks run them. **20 findings are pinned only by host tests:** the seven of 28 Oct's `act.js` 1.1.0; R2 H1 and M4; R3 H1-bis; both of R4; 5 Nov R1 M2, L3 and L4, N2, C1 and C2; F09; and `v0.53.2` round 1's SAVE and LOAD. Porting them is owed (README, Known gaps). Unless a test is marked *guard*, its file records that it fails on the code before the fix.
+- **Tests.** A test under `act/test/` is in this repository. A *host test* is in the reference host's application tests (`test/act*.test.js` in SYNTHEKOS), which are not in this repository; SYNTHEKOS's release checks run them. **20 findings are pinned only by host tests:** the seven of 28 Oct's `act.js` 1.1.0; R2 H1 and M4; R3 H1-bis; both of R4; 5 Nov R1 M2, L3 and L4, N2, C1 and C2; F09; and `v0.53.2` round 1's SAVE and LOAD. Porting them is owed (README, Known gaps). Unless a test is marked *guard*, its file records that it fails on the code before the fix. That code is not in this repository, so this is a record to take on trust (README).
 - **`act/CHANGELOG.md`** keeps the build history as it was written. Since `v0.53.7-cleanup` it names no reviewer, owner or build machine: the second reader appears as a second-reader review, a round as "round 1" or "review 1", and the owner as "the owner" (the note at its top says what was replaced). This page is the key to those entries. An "(owner decision, date)" in the code is a design choice the owner made on that date; it is not a review.
 
 ## 28 Oct: adversarial second-reader review of the capability core (1.0.0)
@@ -286,6 +286,28 @@ Before the repository was made public, the whole `v0.3.0` tree, as `git archive`
   - Fixed in the README and `lab/mutations/README.md`: 8. Its matching comment in `lab/mutations/mutrun.sh`, and 27 (`lab.js`'s first lines), wait for the next lab release: a change to a lab program moves its version, and the mutation table's first line names that version.
   - Waiting for the next SYNTHEKOS release, because `act/` is byte-identical to it: 28 (and the comments of 29). Known gaps says so.
 - **A human read:** the owner read the README and this page as a stranger before `v0.3.1` was built, and had no findings.
+
+## 10 Nov: v0.53.9, the trigger kill switch reaches the host's `appDir` (rounds 1–3)
+
+The second cold read's one behavioural finding (below): `act/trigger-off.js` 1.0.0 wrote its file beside `act.js` whatever `appDir` the host had given `create()`, and created the folder it wrote to, so for a host with its own `appDir` it printed ✓ and switched nothing off. SYNTHEKOS passes no `appDir`, so its own switch wrote where its kernel read.
+- **Round 1:** the design approved. `node act/trigger-off.js <trigger id> [--app-dir <dir>]`: the folder is an argument only, never read from the environment, because two kernels on one machine both have an `act-files/` and a stale variable would switch off a trigger on the other one with a ✓. Without `--app-dir` the folder is the one that holds `act.js`, as before. It fails closed: unless `<dir>/act-files/` exists, it writes nothing and exits 2, and it never creates `act-files/`. The ✓ line names the file it wrote. One plant was added: a script that prints ✓ and writes into another folder must be caught by the end-to-end test, on the trigger still firing.
+- **Round 2:** approved, on the host machine's numbers. Every check of the release passed there; the plant was caught on the fire.
+- **Round 3:** the host machine's first part of the promote, then live.
+- Fixed in `act/trigger-off.js` 1.1.0. Tests: `act/test/trigger-off.test.js` 1.0.0, "FAIL-FIRST end to end: with --app-dir, a host that passes its own appDir gets the trigger switched off — it does not fire", "FAIL-FIRST fail closed: a folder where no kernel has run is refused — exit 2, no ✓, nothing written anywhere" and the *guard* "GUARD default unchanged: with no --app-dir it writes into the folder that holds act.js (create()'s default appDir)". The two FAIL-FIRST tests fail on `v0.53.8`'s script.
+
+## 10 Nov: the cold read of v0.3.1
+
+The whole `v0.3.1` tree went to another fresh Claude Code session, the same way and with the same brief as the first. Its report is `docs/cold-read-v031.md`, word for word.
+
+- **It ran:** `npm test` (371 of 371); `tools/kernel-test-check.sh` (pass); `lab/lab-check.sh` (12 of 12); `tools/name-hashes.js` (3 of 3); the example; the mutation harness on a copy, all 144 rows and the whole file byte-identical to `lab/mutations/RUNS-0538_091126.tsv`; the five suite generators, every sealed scenario regenerated byte for byte; and the fingerprint, recomputed from `lab/KERNEL-SHA256SUMS`.
+- **It could not run:** the git checks (no clone), the byte-identity check (it needs the private SYNTHEKOS repository) and the real-model run (no model server).
+- **Its 36 findings, and how they are settled:**
+  - **The behavioural one, 1:** fixed in the kernel by SYNTHEKOS `v0.53.9` (above), which `v0.3.2` carries; the README describes the switch as it now works.
+  - **The host's contract, 7–14 and 25:** `docs/host.md`, new: what `create()` returns and what a host must call, the record fields, the grants, the requests and their status codes, the 11 actions, the model server, mail and triggers. The README points to it.
+  - **Fixed in this repository's text and tools:** 2–6, 15, 16, 19, 20, 22–24, 26, 27 and 29–36. Among them, the repository's address is in the README and `package.json` (2), the git checks are listed as needing a clone (3), the design records say what was not built (5, 6) and how to register a script without changing a kernel file (4, 15), and the README's example shows its fourth line (35).
+  - **Fixed in a measured file, by a declared edit to one comment line:** 18 (`lab/mutations/RESULTS-0537-cleanup-words.md`, line 31) and 28 (`lab/EXPECTED-RESULTS.txt`, line 1). Their RESULT lines and table rows are unchanged.
+  - **Fixed beside a file that cannot change:** 17 (a note in `lab/mutations/README.md`; the sealed list keeps its sha) and 21 (a README note on the date stamps; `act/CHANGELOG.md` is the kernel's).
+  - **Still waiting:** `lab/mutations/mutrun.sh` still appends and still resolves a relative path against `lab/` (16; the README and `lab/mutations/README.md` say so), and `lab/lab.js`'s first lines (part of 19) wait for the next lab release, with the first cold read's 27: a change to a lab program moves its version, and the mutation table's first line names that version. The six `act.js` entries with no text (20) wait for a SYNTHEKOS release; Known gaps says so.
 
 ## Index: every bare tag in the kernel, by file
 

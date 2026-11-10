@@ -360,6 +360,11 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 - v1.1.0 (061126: + DAEMON_EVICTING — the end-to-end trigger test found the 30 s retry is often itself the evicting start, so it was LOST; + the evicting budget)
 - v1.0.0 (061126 · v0.53.4, second-reader review, round 3: TRANSIENT refusals — a run that was never attempted is not a failure).
 
+## act/test/trigger-off.test.js
+
+- v1.0.0 (101126 · v0.53.9: the trigger kill switch, end to end — with `--app-dir`, a host that passes its own appDir gets the trigger switched off and it does not fire; a folder where no kernel has run is refused (exit 2, no ✓, nothing written); with no `--app-dir` it writes beside act.js, as before. Two FAIL-FIRST tests fail on v0.53.8's script; the guard passes on both.)
+
 ## act/trigger-off.js
 
+- v1.1.0 (101126 · v0.53.9: `--app-dir <dir>` reaches the appDir the host gave to create() (no environment variable: a stale one could reach another kernel on the same machine); fail closed — unless <dir>/act-files/ exists it writes nothing and exits 2, and it no longer creates act-files/; the ✓ line names the file it wrote. Without `--app-dir` the folder is the one that holds act.js, as before.)
 - v1.0.0 (031126)

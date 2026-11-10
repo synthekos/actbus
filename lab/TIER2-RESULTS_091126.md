@@ -7,7 +7,7 @@
 - **the sampling:** every model call carried temperature **0.2**, set by `act.js`'s model action (`lab.js` adds 0.7 only to a call that carries no temperature, and none did; checked on the wire against a stand-in model server), and the run's seed as the model's seed, **seeds 1–5**. The same server, weights, temperature and seed can still give other replies on other hardware.
 
 ## What was run
-- **Code:** tag `v0.2.5` of the private predecessor repository (commit `3c41b57`; README, "What you can check here"), kernel fingerprint `7928fa6b5c9a` (SYNTHEKOS `v0.53.7-cleanup`), lab 0.2.3, Node v26.7.0. Before any run the job checked the tag's 214 files by sha256, and every run's ENV line names the kernel as the recorded one.
+- **Code:** tag `v0.2.5` of the private predecessor repository (commit `3c41b57`), kernel fingerprint `7928fa6b5c9a` (SYNTHEKOS `v0.53.7-cleanup`), lab 0.2.3, Node v26.7.0. Before any run the job checked the tag's 214 files by sha256, and every run's ENV line names the kernel as the recorded one.
 - **Suite 1** (`lab/suites/injection`, sealed `e85897a2a224`): 38 scenarios, 20 in the JSON shape and 18 in the WORDS shape, × seeds 1–5 = 190 runs per model, 760 in all, in-process.
 - **When:** 9 Nov 2026, 22:48 to 23:03 UTC.
 - **The models,** by their real names. A model name here is measurement: it says what was run. The scenarios themselves use the neutral `model-a`.

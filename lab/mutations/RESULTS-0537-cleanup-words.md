@@ -28,4 +28,4 @@ Measured 9 Nov 2026 with `lab/mutations/mutrun.sh` (lab 0.2.3, seed 1, stand-in 
 
 **13 of 15 caught**, the same 13 as before. Not caught: M1, M13 — see the README's Known gaps.
 
-Reproduce: `bash lab/mutations/mutrun.sh /tmp/runs.tsv LIVE M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15` (the repo is never changed; mutants live in a temp folder).
+Reproduce: `bash lab/mutations/mutrun.sh /tmp/runs.tsv LIVE M1 M2 M3 M4 M5 M6 M7 M8 M9 M10 M11 M12 M13 M14 M15` (the kernel files are never changed: the mutants are built in a temp folder, and each run's results go to `lab/results/`).

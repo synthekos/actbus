@@ -23,7 +23,7 @@ Three decisions shaped v0:
 form    := atom | '(' form* ')'
 atom    := number | string | symbol | keyword | true | false | nil
 number  := -?digits(.digits)?          → exact rational (act/core/rational.js); no floats, no exponent
-string  := "…" with \" \\ \n \t only;  ≤ 64 KB after decoding
+string  := "…" with \" \\ \n \t only
 symbol  := [a-z][a-z0-9-]*[?]?         (≤ 48 chars, same as action names + optional ?)
          | + - * / = < > <= >=          (the operators; '-' followed by a digit is a number; -x is an error)
 keyword := :symbol                     (only as argument names in action calls)
@@ -33,6 +33,8 @@ comment := ; to end of line
 - source ≤ 16 KB;
 - nesting depth ≤ 64;
 - ≤ 4 000 forms.
+
+The reader also bounds a string literal at 64 K characters (`act/proteus/reader.js`), which a 16 KB source cannot reach. Strings a script builds while it runs are bounded at 65 536 characters (`LIMITS.STR`, `act/proteus/eval.js`).
 
 Anything else that does not parse is a read error. Source is strict UTF-8, and non-ASCII is allowed only inside strings and comments.
 
@@ -105,9 +107,10 @@ Script state is visible only to that script. Every write is audited (`state-set`
 A registry entry (`registry.spec.json`, compiled by `make-registry.js`, sha256-pinned):
 ```
 { "name": "rate-watch", "version": "1.0.0", "kind": "script", "file": "rate-watch.pk", "produces": "computed",
-  "world": <computed at load: true if it can reach any world action>, "runsAs": "<the script's own identity>",
+  "world": false, "runsAs": "<the script's own identity>", "needs": [], "acceptWarnings": false,
   "input": {}, "timeoutMs": 300000 }
 ```
+**`world` must be declared,** `true` or `false`. At load it is checked against what the script can reach, and a mismatch is refused (`act/core/registry.js`). `acceptWarnings: true` is the administrator's acceptance of the warnings (§5); without it, a script with a warning is refused.
 **At load,** the script is read, then statically walked. The walk checks:
 - (a) every called name is registered;
 - (b) there is no cycle through script-to-script calls;
@@ -116,7 +119,7 @@ A registry entry (`registry.spec.json`, compiled by `make-registry.js`, sha256-p
 
 Any failure means that script is refused at start, as an action file would be. **`runsAs` is allowed for `kind: script` only.** A native action may not run as another identity.
 
-**A worked example.** An administrator writes the entry into `act/actions/registry.spec.json`, puts the `.pk` file next to it, and runs `node act/make-registry.js act/actions`: that pins every file's sha256 into `registry.json`, and running it is the approval. This repository ships no `.pk` file; the lab's scenarios carry complete scripts. `lab/suites/injection/limit-page-decides-whether.json` is a short one (`scripts[0].source`), and `runScenario` in `lab/lab.js` writes each scenario's scripts to `.pk` files and pins them the same way.
+**A worked example.** An administrator copies `act/actions/` to a folder of the host's own, writes the entry into that copy's `registry.spec.json`, puts the `.pk` file next to it, runs `node act/make-registry.js <that folder>`, and passes the folder to `create()` as `actionsDir` (`docs/host.md`). `make-registry.js` pins every file's sha256 into `registry.json`, and running it is the approval. Doing this in `act/actions/` itself would change kernel files: `registry.json` is rewritten, with a new approval time. This repository ships no `.pk` file; the lab's scenarios carry complete scripts. `lab/suites/injection/limit-page-decides-whether.json` is a short one (`scripts[0].source`), and `runScenario` in `lab/lab.js` writes each scenario's scripts to `.pk` files and pins them the same way.
 
 ## 8. How the core carries scripts
 1. **Labels per child.** For a script, the interpreter gives each child message the labels of its own input values (plus the envelope's labels), and `ctl` = C. Native actions keep the conservative rule: every child gets every label the action has received. In both cases the script's own reply accumulates everything.
