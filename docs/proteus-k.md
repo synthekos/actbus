@@ -116,6 +116,8 @@ A registry entry (`registry.spec.json`, compiled by `make-registry.js`, sha256-p
 
 Any failure means that script is refused at start, as an action file would be. **`runsAs` is allowed for `kind: script` only.** A native action may not run as another identity.
 
+**A worked example.** An administrator writes the entry into `act/actions/registry.spec.json`, puts the `.pk` file next to it, and runs `node act/make-registry.js act/actions`: that pins every file's sha256 into `registry.json`, and running it is the approval. This repository ships no `.pk` file; the lab's scenarios carry complete scripts. `lab/suites/injection/limit-page-decides-whether.json` is a short one (`scripts[0].source`), and `runScenario` in `lab/lab.js` writes each scenario's scripts to `.pk` files and pins them the same way.
+
 ## 8. How the core carries scripts
 1. **Labels per child.** For a script, the interpreter gives each child message the labels of its own input values (plus the envelope's labels), and `ctl` = C. Native actions keep the conservative rule: every child gets every label the action has received. In both cases the script's own reply accumulates everything.
 2. **The envelope** checks and carries the optional `ctl`, and the audit writes it.
@@ -158,9 +160,9 @@ In v0, a key holder can *call* a registered script but can never *send* source, 
 
 Capability intersection guarantees that a submitted program never exceeds its sender.
 
-## 12. Open
-- `timeoutMs` for scripts: 300 s is proposed, because a model call alone may take 120 s.
-- The file extension is `.pk`.
+## 12. Open when this was written, settled since
+- `timeoutMs` for scripts: settled at 300 s, because a model call alone may take 120 s. It is the registry's default for a script (`act/core/registry.js`).
+- The file extension: settled as `.pk`. The registry refuses a script file with any other (`act/core/registry.js`).
 
 ## 13. Self-review record (not independent)
 | Finding | Severity | What happened |

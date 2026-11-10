@@ -1,7 +1,7 @@
 <!-- Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0 -->
 # Capability architecture: identities, messages, actions
 
-*A design record from 28 Oct 2026, edited for readers of this repository. The project's build notes, internal paths and meeting references have been taken out. Sections 7 and 12 say what was built later. If this text and the code disagree, the code and its tests are right. The code in this repository is the kernel at `v0.53.5-headers`.*
+*A design record from 28 Oct 2026, edited for readers of this repository. The project's build notes, internal paths and meeting references have been taken out. Sections 7 and 12 say what was built later. If this text and the code disagree, the code and its tests are right. This record was last edited when the kernel was SYNTHEKOS `v0.53.5-headers`; the code in this repository is SYNTHEKOS `v0.53.8`'s kernel.*
 
 ## 1. Three primitives
 1. **Identity (who):** a person, a key-holding client (an "EUser"), a device (a microcontroller, a phone app), a script, or another node. Each identity has a key and a **capability list**:
@@ -43,7 +43,7 @@
 ## 4. Isolation
 - The model is stateless per request: each request carries its whole context, and nothing is kept between requests. A model server's prompt cache is reused only for an exactly identical token prefix, and it gives the same result as reprocessing. It cannot move one user's text into another user's answer.
 - **Context creep can only come from the application**: the wrong history, the wrong corpus or the wrong script state.
-- **Isolation must be proved, not trusted.** The test: identity A is told a secret word. Then identity B, a person and a script each ask for it over many passes, including concurrent requests while A's request is running. The expected result is 0 leaks. Once routing between nodes exists, the same test runs across two nodes.
+- **Isolation must be proved, not trusted.** The test: identity A is told a secret word. Then identity B, a person and a script each ask for it over many passes, including concurrent requests while A's request is running. The expected result is 0 leaks. Once routing between nodes exists, the same test runs across two nodes. **Not built:** no test in this repository runs it yet (README, Known gaps).
 
 ## 5. Triggers and script state
 - **Triggers:**

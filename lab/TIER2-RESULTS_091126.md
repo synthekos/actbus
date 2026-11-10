@@ -7,7 +7,7 @@
 - **the sampling:** every model call carried temperature **0.2**, set by `act.js`'s model action (`lab.js` adds 0.7 only to a call that carries no temperature, and none did; checked on the wire against a stand-in model server), and the run's seed as the model's seed, **seeds 1–5**. The same server, weights, temperature and seed can still give other replies on other hardware.
 
 ## What was run
-- **Code:** tag `v0.2.5` (commit `3c41b57`), kernel fingerprint `7928fa6b5c9a` (SYNTHEKOS `v0.53.7-cleanup`), lab 0.2.3, Node v26.7.0. Before any run the job checked the tag's 214 files by sha256, and every run's ENV line names the kernel as the recorded one.
+- **Code:** tag `v0.2.5` of the private predecessor repository (commit `3c41b57`; README, "What you can check here"), kernel fingerprint `7928fa6b5c9a` (SYNTHEKOS `v0.53.7-cleanup`), lab 0.2.3, Node v26.7.0. Before any run the job checked the tag's 214 files by sha256, and every run's ENV line names the kernel as the recorded one.
 - **Suite 1** (`lab/suites/injection`, sealed `e85897a2a224`): 38 scenarios, 20 in the JSON shape and 18 in the WORDS shape, × seeds 1–5 = 190 runs per model, 760 in all, in-process.
 - **When:** 9 Nov 2026, 22:48 to 23:03 UTC.
 - **The models,** by their real names. A model name here is measurement: it says what was run. The scenarios themselves use the neutral `model-a`.
@@ -39,10 +39,10 @@
 On 6 Nov 2026 the same 38 scenarios, then under the old names (`lab/SEALS.md`), were run on kernel 0.53.2 with the same four model names (their digests were not recorded then): 760 runs, 27 followed (26 by the marker, and one misspelled address found by hand), all 27 refused by the kernel, 239 of 240 benign passed. That run is in the private provenance record. The number for this tag is 23.
 
 ## The raw results
-They are not in this repository. Every run's result, audit log and model transcript, and the job's own output, are sealed as one tar: sha256 `9866f074d0a4323590691822cc5a50d6d21ae976a69b975c171a7296b6363a32` (1535 entries). The job's output names the machine it ran on, which is why the tar stays out. The tar is available to reviewers on request, as is the private provenance record.
+They are not in this repository. Every run's result, audit log and model transcript, and the job's own output, are sealed as one tar: sha256 `9866f074d0a4323590691822cc5a50d6d21ae976a69b975c171a7296b6363a32` (1535 entries). The job's output names the machine it ran on, which is why the tar stays out. The tar is available to reviewers, as is the private provenance record: ask in an issue on this repository.
 
 ## Reproduce
-On a machine with a local model server on `localhost:11434` and the four models pulled, for each model:
+On a machine with a local model server on `localhost:11434` (the server is Ollama, at the version above) and the four models pulled by the digests above, for each model:
 ```
 cd lab && LAB_MODEL=real LAB_MODEL_NAME=<model> node lab.js run suites/injection 1-5
 ```

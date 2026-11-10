@@ -1,14 +1,15 @@
 #!/bin/bash
 # Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-# check-byte-identity.sh — v1.1.0 (081126: an ACTBUS ref other than the tag — its act.js + act/** only, no root rule) · was v1.0.0 (071126)
+# check-byte-identity.sh — v1.2.0 (101126: the tag is required; the text says what each form checks) · was v1.1.0 (081126: an ACTBUS ref other than the tag — its act.js + act/** only, no root rule) · was v1.0.0 (071126)
 # Two forms, both read-only (only `git ls-tree`, `rev-parse`, `rev-list`):
 #  · TAG alone: ACTBUS's TAG holds exactly SYNTHEKOS's act.js + act/** at its TAG — the same set of paths, modes and git blob hashes
 #    (the committed objects, not a checkout), nothing missing and nothing extra in the WHOLE tree — and is a root commit.
 #  · TAG and REF: ACTBUS's REF (e.g. v0.1.1) holds, under act.js + act/**, exactly SYNTHEKOS's act.js + act/** at TAG. The rest of
-#    REF's tree (README, lab, docs, tools) is not compared, and REF may have history.
-#   usage: bash tools/check-byte-identity.sh <synthekos-repo> <actbus-repo> [tag, default v0.53.5-headers] [actbus-ref, default = tag]
+#    REF's tree (README, lab, docs, tools) is not compared, and REF may have history: this form does not check a root commit, it
+#    prints REF's commit count. (ACTBUS v0.3.0 is a root commit: `git rev-list --parents -n 1 v0.3.0 | wc -w` prints 1.)
+#   usage: bash tools/check-byte-identity.sh <synthekos-repo> <actbus-repo> <tag> [actbus-ref, default = tag]
 set -u
-LIVE=${1:?usage: check-byte-identity.sh <synthekos-repo> <actbus-repo> [tag] [actbus-ref]}; REPO=${2:?usage}; TAG=${3:-v0.53.5-headers}; REF=${4:-$TAG}
+LIVE=${1:?usage: check-byte-identity.sh <synthekos-repo> <actbus-repo> <tag> [actbus-ref]}; REPO=${2:?usage}; TAG=${3:?usage: the SYNTHEKOS tag is required, e.g. v0.53.8}; REF=${4:-$TAG}
 [ $# -le 4 ] || { echo "STOP: too many arguments"; exit 2; }
 A=$(mktemp); B=$(mktemp); trap 'rm -f "$A" "$B"' EXIT
 git -C "$LIVE" rev-parse -q --verify "$TAG^{commit}" >/dev/null || { echo "STOP: $LIVE has no tag $TAG"; exit 2; }

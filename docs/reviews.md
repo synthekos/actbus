@@ -7,7 +7,7 @@ These were structured review rounds run by AI sessions reading the code cold: a 
 - Each section is one review, in date order (2026). Its heading says what the kernel's comments call it, so a citation in the code leads here.
 - **A tag belongs to its review.** `H1` in the mailbox review R2 and `H1` in the slice 3 review R-S3 are different findings; `R1` names both a finding of the 2 Nov invariant tests and the 5 Nov review of acknowledged reads. The index at the end resolves every bare tag in the kernel by file.
 - **"Round N" belongs to its release.** Each release reviewed from 6 Nov on had its own rounds.
-- **Tests.** A test under `act/test/` is in this repository. A *host test* is in the reference host's application tests (`test/act*.test.js` in SYNTHEKOS), which are not in this repository; SYNTHEKOS's release checks run them. Unless a test is marked *guard*, its file records that it fails on the code before the fix.
+- **Tests.** A test under `act/test/` is in this repository. A *host test* is in the reference host's application tests (`test/act*.test.js` in SYNTHEKOS), which are not in this repository; SYNTHEKOS's release checks run them. **20 findings are pinned only by host tests:** the seven of 28 Oct's `act.js` 1.1.0; R2 H1 and M4; R3 H1-bis; both of R4; 5 Nov R1 M2, L3 and L4, N2, C1 and C2; F09; and `v0.53.2` round 1's SAVE and LOAD. Porting them is owed (README, Known gaps). Unless a test is marked *guard*, its file records that it fails on the code before the fix.
 - **`act/CHANGELOG.md`** keeps the build history as it was written. Since `v0.53.7-cleanup` it names no reviewer, owner or build machine: the second reader appears as a second-reader review, a round as "round 1" or "review 1", and the owner as "the owner" (the note at its top says what was replaced). This page is the key to those entries. An "(owner decision, date)" in the code is a design choice the owner made on that date; it is not a review.
 
 ## 28 Oct: adversarial second-reader review of the capability core (1.0.0)
@@ -269,8 +269,23 @@ One rule, checked before anything is created: an own option name `create()` does
 
 ## 9 Nov: two gaps in the release checks' own tools
 
+The tools named here (`check-cleanup.js`, `check-1c.js`, `check-lab.js`) are the private release tooling of SYNTHEKOS and of this repository's predecessor; they are not in this repository. *D* is the release name check: it searches every file for the owner's name and addresses, machine names, internal document numbers and model names, decodes base64 and searches that too, and excuses a known-true line only by its own row (file, line, pattern, exact text).
+
 - **A name-check gap, found 9 Nov:** the name check D of `check-cleanup.js` 1.0.0 reported each line once per pattern, so a second match of the same pattern on one line was hidden. It changed counts, never a verdict: a line with one match already fails, and an excused line is excused for its one pattern however often it occurs, so every earlier D result stands. `check-lab.js` 1.0.0 counts every match.
 - **A regex gap, found 9 Nov:** `check-1c.js`, the token check of the 8 Nov comment-only release, read a regex token as `String(object)`, which is `[object Object]` on both sides, so a changed regex would have passed. That release changed no regex, so its result stands. Every checker since compares a regex by its pattern and flags.
+
+## 10 Nov: the cold read of v0.3.0
+
+Before the repository was made public, the whole `v0.3.0` tree, as `git archive` gives it and with nothing else, went to a fresh Claude Code session in an empty folder: no memory, no project notes, no instructions above the folder. Its brief: read this repository as its first outside reader, and say what is false, unclear, unfollowable or missing; try what the README says to run; change nothing. The reader is the same model family that wrote the code. It is the best cold read available before a human, and it is not a human. Its report is `docs/cold-read-v030.md`, word for word.
+
+- **It ran:** `npm test` (371 of 371); `tools/kernel-test-check.sh` (pass); `lab/lab-check.sh` (12 of 12); the mutation harness on a copy, all 144 rows byte-identical to `lab/mutations/RUNS-0538_091126.tsv`, the table's third reproduction.
+- **It could not run:** the byte-identity check (it needs the private SYNTHEKOS repository and a git clone) and the real-model run (no model server).
+- **Its 30 findings, and how `v0.3.1` settles them:**
+  - Fixed in this repository's text and tools: 1–7, 9–25 and 30. Among them, the README now says what can be checked here and what is taken on trust (2), `examples/minimal-host.js` is a complete host (6, 7), `tools/name-hashes.js` reproduces all three published hashes (11), the lab table has its documented-limit column (10), and the README's check order and `docs/kernel-flow.svg` follow `act/core/bus.js` (19, 20).
+  - Fixed beside a file that cannot change: 26 (a note in `lab/mutations/README.md`; the sealed list keeps its sha) and 29 (a README note; `act.js` stays byte-identical).
+  - Fixed in the README and `lab/mutations/README.md`: 8. Its matching comment in `lab/mutations/mutrun.sh`, and 27 (`lab.js`'s first lines), wait for the next lab release: a change to a lab program moves its version, and the mutation table's first line names that version.
+  - Waiting for the next SYNTHEKOS release, because `act/` is byte-identical to it: 28 (and the comments of 29). Known gaps says so.
+- **A human read:** the owner read the README and this page as a stranger before `v0.3.1` was built, and had no findings.
 
 ## Index: every bare tag in the kernel, by file
 
