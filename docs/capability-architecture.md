@@ -1,7 +1,7 @@
 <!-- Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0 -->
 # Capability architecture: identities, messages, actions
 
-*A design record from 28 Oct 2026, edited for readers of this repository. The project's build notes, internal paths and meeting references have been taken out. Sections 7 and 12 say what was built later. If this text and the code disagree, the code and its tests are right. This record was last edited when the kernel was SYNTHEKOS `v0.53.5-headers`; the code in this repository is SYNTHEKOS `v0.53.9`'s kernel.*
+*A design record from 28 Oct 2026, edited for readers of this repository. The project's build notes, internal paths and meeting references have been taken out. Sections 7 and 12 say what was built later. If this text and the code disagree, the code and its tests are right. The code in this repository is the kernel that the README and `lab/KERNEL-VERSION.txt` name.*
 
 ## 1. Three primitives
 1. **Identity (who):** a person, a key-holding client (an "EUser"), a device (a microcontroller, a phone app), a script, or another node. Each identity has a key and a **capability list**:

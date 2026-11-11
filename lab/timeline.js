@@ -1,4 +1,4 @@
-// timeline.js — v0.1.0 (061126) · turns a lab results folder into ONE readable page (timeline.html): per scenario the verdict, what it
+// timeline.js — v0.1.1 (111126: the page's live version is read from KERNEL-VERSION.txt, as lab.js reads it; it said 0.53.1 for every run) · was v0.1.0 (061126) · turns a lab results folder into ONE readable page (timeline.html): per scenario the verdict, what it
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // tested, each expectation (pass/fail) and the audit trail in plain words — who asked, what ran, what was REFUSED and why, which labels
 // travelled. Reads only the audit lines (which never hold message bodies) and the result files. The same renderer is meant for the
@@ -6,6 +6,7 @@
 'use strict';
 const fs = require('fs'), path = require('path');
 const dir = process.argv[2]; if (!dir) { console.error('usage: node timeline.js <results-dir>'); process.exit(2); }
+const KVER = (() => { try { return (/"version": "([^"]+)"/.exec(fs.readFileSync(path.join(__dirname, 'KERNEL-VERSION.txt'), 'utf8')) || [])[1] || '?'; } catch (_) { return '?'; } })();   // 0.1.1, as lab.js 0.1.12
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const sum = JSON.parse(fs.readFileSync(path.join(dir, 'SUMMARY.json'), 'utf8'));
 const results = fs.readdirSync(dir).filter((f) => f.endsWith('.result.json')).sort().map((f) => JSON.parse(fs.readFileSync(path.join(dir, f), 'utf8')));
@@ -48,7 +49,7 @@ ul.ex,ol.tl{margin:0;padding-left:20px}ul.ex li.p{color:var(--ok)}ul.ex li.f{col
 ol.tl li{margin:2px 0;font-size:13.5px}ol.tl .t{font:11.5px ui-monospace,monospace;color:var(--mut);margin-right:8px}
 li.refused,li.error{color:var(--bad)}li.grants{color:var(--amb)}.lab{font:11px ui-monospace,monospace;background:var(--chip);padding:1px 5px;border-radius:3px}.ctl{font:11px ui-monospace,monospace;color:var(--amb)}</style></head><body><main>
 <h1>Lab timeline · ${esc(sum.suite)}</h1>
-<div class="meta">${esc(sum.version)} · ${esc(sum.stamp)} · ${esc(sum.host)} · node ${esc(sum.node)} · kernel ${esc(String(sum.kernelSums).slice(0, 12))}${sum.kernelIsLiveCopy === false ? ' (NOT the live copy)' : ' (copy of live 0.53.1)'} · model ${esc(sum.model)} · expectations sealed ${esc(sum.sealedAt)} (${esc(String(sum.sealSha).slice(0, 12))})</div>
+<div class="meta">${esc(sum.version)} · ${esc(sum.stamp)} · ${esc(sum.host)} · node ${esc(sum.node)} · kernel ${esc(String(sum.kernelSums).slice(0, 12))}${sum.kernelIsLiveCopy === false ? ' (NOT the live copy)' : ' (copy of live ' + esc(KVER) + ')'} · model ${esc(sum.model)} · expectations sealed ${esc(sum.sealedAt)} (${esc(String(sum.sealSha).slice(0, 12))})</div>
 <div class="big"><div>runs as expected<b>${sum.passed} / ${sum.runs}</b></div><div>attacks held<b>${sum.hostile.held} / ${sum.hostile.runs}</b></div><div>benign delivered<b>${sum.benign.passed} / ${sum.benign.runs}</b></div><div>silent failures<b>${sum.invariantViolations}</b></div></div>
 <p class="meta">One seed per scenario is shown; every seed's audit file is in this folder. Message bodies are never in the audit, so none are shown. "HELD" = every sealed expectation true.</p>
 ${cards}

@@ -1,7 +1,7 @@
 <!-- Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0 -->
 # PROTEUS-K v0: specification
 
-*This specification was written 30 Oct 2026 and has been edited for readers of this repository: the project's build notes, internal paths and meeting references are taken out. It describes v0. Functions, the standard library and the collection forms came later and are described in `functions-and-mailboxes.md`. If this text and the code disagree, the code and its tests are right. The code is `act/proteus/` (reader, evaluator, engine, state).*
+*This specification was written 30 Oct 2026 and has been edited for readers of this repository: the project's build notes, internal paths and meeting references are taken out. It describes v0. Functions, the standard library and the collection forms came later and are described in `functions-and-mailboxes.md` §2, which has a reference table of each collection form and library function, with an example of each. If this text and the code disagree, the code and its tests are right. The code is `act/proteus/` (reader, evaluator, engine, state).*
 
 Three decisions shaped v0:
 1. **Lisp syntax, not a general Lisp.** Every v0 script terminates. Extensions are allowed later only if registration can still list everything a script can reach.
@@ -11,7 +11,7 @@ Three decisions shaped v0:
 ## 1. What PROTEUS-K v0 is (and is not)
 - **A script is an action.** It is a hash-pinned source file in the registry (kind `script`), called through the same bus, and checked, labelled and audited like `calc` or `fetch`. The interpreter is the sandbox: a script touches nothing but actions.
 - **Total.** Every script finishes. There is no `eval`, no user macros, no `lambda`, no recursion and no `while`. The only loop is `for-each` over a list, and it is capped. Fuel (a count of evaluation steps) is a second guard.
-- **Statically readable.** At registration the tree is walked, and the list of every action (and literal target) the script can reach is computed. That list is shown to the administrator and checked against the script identity's grants. Script-to-script calls must form no cycle.
+- **Statically readable.** At registration the tree is walked, and the list of every action (and literal target) the script can reach is computed. `make-registry.js`, the approval, prints that list under the script's `✓` line (§7); at each call, the bus checks every action on it against the grants of the caller and of the script's identity. Script-to-script calls must form no cycle.
 - **Not in v0:**
   - helper functions (added later, see `functions-and-mailboxes.md`);
   - routing to other nodes;
@@ -38,7 +38,7 @@ The reader also bounds a string literal at 64 K characters (`act/proteus/reader.
 
 Anything else that does not parse is a read error. Source is strict UTF-8, and non-ASCII is allowed only inside strings and comments.
 
-**Canonical form.** This is the printed tree, with single spaces and no comments, and it is what the administrator is shown for approval. The registry pins the sha256 of the *file bytes*, as it does for every action. The canonical form is only for display and diff.
+**Canonical form.** This is the printed tree, with single spaces and no comments: `print` in `act/proteus/reader.js` gives it. The registry pins the sha256 of the *file bytes*, as it does for every action. The canonical form is only for display and diff, and `make-registry.js` does not show it: the administrator reviews the `.pk` file itself.
 
 ## 3. Values
 The value types are:
@@ -65,7 +65,7 @@ Every value carries **data labels**, a subset of: person, device, computed, grou
 | `(= a b)` `(< a b)` `(> a b)` `(<= a b)` `(>= a b)` | numbers compared exactly (rational); `=` also on strings, booleans, nil |
 | `(+ …)` `(- …)` `(* …)` `(/ a b)` | exact rationals, bounded at 8 192 bits; `/` by 0 is a script error |
 | `(str …)` `(len x)` `(list …)` `(get rec "key")` `(number "1.3725")` | text join · length · list · field of a record · exact parse (an error if not a number) |
-| `(input name)` | the script's input field `name` (declared in the registry entry's `input`) |
+| `(input name)` | the script's input field `name` (declared in the registry entry's `input`, below) |
 | `(for-each (x list) body…)` | ≤ 100 iterations (an error above that); value nil |
 | `(remember key value)` `(remembered key)` | script state (§6); `remembered` of an unknown key is nil |
 | `(fail "reason")` | stop the script with an error (audited) |
@@ -110,7 +110,8 @@ A registry entry (`registry.spec.json`, compiled by `make-registry.js`, sha256-p
   "world": false, "runsAs": "<the script's own identity>", "needs": [], "acceptWarnings": false,
   "input": {}, "timeoutMs": 300000 }
 ```
-**`world` must be declared,** `true` or `false`. At load it is checked against what the script can reach, and a mismatch is refused (`act/core/registry.js`). `acceptWarnings: true` is the administrator's acceptance of the warnings (§5); without it, a script with a warning is refused.
+**`world` must be declared,** `true` or `false`. At load it is checked against what the script can reach, and a mismatch is refused (`act/core/registry.js`). `acceptWarnings: true` is the administrator's acceptance of the warnings (§5); without it, a script with a warning is refused. `make-registry.js` prints each warning it accepts, as an `accepted warning:` line under the script.
+**`input`** maps each field the script reads with `(input name)` to its type: `string`, `number`, `integer`, `boolean`, `object` or `array`, ending in `?` when the field is optional. A field name must match `^[a-z][a-zA-Z0-9]{0,31}$`: a lower-case letter, then letters or digits, with no dash. So a script reads `(input oldRate)`, not `(input old-rate)`, although a symbol may contain dashes. A name that breaks the rule is refused at approval, with that rule in the message.
 **At load,** the script is read, then statically walked. The walk checks:
 - (a) every called name is registered;
 - (b) there is no cycle through script-to-script calls;
@@ -119,7 +120,7 @@ A registry entry (`registry.spec.json`, compiled by `make-registry.js`, sha256-p
 
 Any failure means that script is refused at start, as an action file would be. **`runsAs` is allowed for `kind: script` only.** A native action may not run as another identity.
 
-**A worked example.** An administrator copies `act/actions/` to a folder of the host's own, writes the entry into that copy's `registry.spec.json`, puts the `.pk` file next to it, runs `node act/make-registry.js <that folder>`, and passes the folder to `create()` as `actionsDir` (`docs/host.md`). `make-registry.js` pins every file's sha256 into `registry.json`, and running it is the approval. Doing this in `act/actions/` itself would change kernel files: `registry.json` is rewritten, with a new approval time. `examples/script-host.js` does all of this, end to end, with a one-line script, `answer.pk`, that calls `calc`. Run it from the repository root with `node examples/script-host.js`; it works in a new temp folder. It has three records: the person `alex`, who owns both EUsers; `caller`, the EUser that calls the script; and `helper`, the EUser the script runs as (`"runsAs": "u-00000000-0000-4000-8000-000000000003"`). A script's own identity is an EUser record like any other: owned by a person, with grants of its own. The grant JSON of each call is `{ "owner": "alex", "actions": { … } }`, with the actions its line names. It prints one line per call (each call's id and trace are shown here as `…`, and the temp folder is shortened):
+**A worked example.** An administrator copies `act/actions/` to a folder of the host's own, writes the entry into that copy's `registry.spec.json`, puts the `.pk` file next to it, runs `node act/make-registry.js <that folder>`, and passes the folder to `create()` as `actionsDir` (`docs/host.md`). `make-registry.js` checks every entry as the loader will, pins every file's sha256 into `registry.json`, and running it is the approval. If it refuses an entry, it writes no `registry.json` (`docs/host.md`, "The approval"). Doing this in `act/actions/` itself would change kernel files: `registry.json` is rewritten, with a new approval time. `examples/script-host.js` does all of this, end to end, with a one-line script, `answer.pk`, that calls `calc`. Its first line is the `✓ answer` line of `make-registry.js`'s output, and under it the tool prints `    reach: calc`. Run it from the repository root with `node examples/script-host.js`; it works in a new temp folder. It has three records: the person `alex`, who owns both EUsers; `caller`, the EUser that calls the script; and `helper`, the EUser the script runs as (`"runsAs": "u-00000000-0000-4000-8000-000000000003"`). A script's own identity is an EUser record like any other: owned by a person, with grants of its own. The grant JSON of each call is `{ "owner": "alex", "actions": { … } }`, with the actions its line names. It prints one line per call (each call's id and trace are shown here as `…`, and the temp folder is shortened):
 ```
 approved: ✓ answer 1.0.0 answer.pk 11cb86ab7a73
 caller holds answer, calc · helper holds calc → HTTP 403 {"ok":false,"id":"…","trace":"…","action":"answer","code":"NOT_PERMITTED","error":"not permitted: u-00000000-0000-4000-8000-000000000003 may not run answer"}
@@ -177,7 +178,7 @@ In v0, a key holder can *call* a registered script but can never *send* source, 
 Capability intersection guarantees that a submitted program never exceeds its sender.
 
 ## 12. Open when this was written, settled since
-- `timeoutMs` for scripts: settled at 300 s, because a model call alone may take 120 s. It is the registry's default for a script (`act/core/registry.js`).
+- `timeoutMs` for scripts: settled at 300 s, because a model call alone may take 120 s: that is the `model` action's `timeoutMs` in `act/actions/registry.spec.json`, and its request to the model server is aborted at 115 s (`act.js`:162). 300 s is the registry's default for a script (`act/core/registry.js`).
 - The file extension: settled as `.pk`. The registry refuses a script file with any other (`act/core/registry.js`).
 
 ## 13. Self-review record (not independent)

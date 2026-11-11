@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 470" role="img" aria-labelledby="ft">
-  <rect x="0" y="0" width="1060" height="470" fill="#ffffff"/><title id="ft">Flow: a key holder or a trigger sends a message to the bus; the bus checks it, runs the action or script; scripts run in a daemon and ask the bus for every action; mailboxes connect identities; everything is written to the audit log.</title>
+  <rect x="0" y="0" width="1060" height="470" fill="#ffffff"/><title id="ft">Flow: a host passes its authenticated EUser's request, or a trigger fires, and a message goes to the bus; the bus checks it, runs the action or script; scripts run in a daemon and ask the bus for every action; mailboxes connect identities; everything is written to the audit log.</title>
   <defs><style>svg{
   --bg:#f4f5f2; --paper:#ffffff; --ink:#1b2320; --soft:#5b6762; --line:#d3d9d5; --code:#eef2ef;
   --accent:#1f6e5e; --accent-soft:#dcece7; --warn:#a4561f; --stop:#a33a3a;
@@ -19,8 +19,8 @@
   </defs>
   <!-- callers -->
   <rect x="16" y="40" width="170" height="70" rx="8" class="b"/>
-  <text x="101" y="66" text-anchor="middle" class="t" font-size="14">EUser with a key</text>
-  <text x="101" y="84" text-anchor="middle" class="tm" font-size="10.5">POST /api/act</text>
+  <text x="101" y="66" text-anchor="middle" class="t" font-size="14">a host's EUser</text>
+  <text x="101" y="84" text-anchor="middle" class="tm" font-size="10.5">act.route(req, res)</text>
   <text x="101" y="99" text-anchor="middle" class="tm" font-size="10.5">{action, input, id?}</text>
   <rect x="16" y="150" width="170" height="78" rx="8" class="b"/>
   <text x="101" y="174" text-anchor="middle" class="t" font-size="14">Scheduler</text>

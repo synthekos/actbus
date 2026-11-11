@@ -1,4 +1,4 @@
-// registry.js — v1.2.4 · the action registry: every action is a file pinned by its sha256 · changelog: act/CHANGELOG.md#actcoreregistryjs
+// registry.js — v1.3.0 · the action registry: every action is a file pinned by its sha256 · changelog: act/CHANGELOG.md#actcoreregistryjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // ## Design
@@ -8,15 +8,22 @@
 // At load the registry computes what each script can REACH; it refuses a script that calls an unknown or refused action,
 // that is part of a call cycle between scripts, whose declared "world" differs from what it reaches, or whose warnings
 // (a world action decided by web/model data) the admin has not accepted ("acceptWarnings": true). Nothing else changes.
-// registry.json (admin-written):
+// 1.3.0: check(dir, entries, { scriptEngine }) is that whole check, for a folder and a list of entries; load() calls it on
+// registry.json, and make-registry.js (the admin's approval) calls it on registry.spec.json with each file's sha256, so the
+// approval refuses exactly what the loader refuses. Neither act.js nor make-registry.js passes any other option.
+// runsAsAnyKindForBusTests: true is for the bus's own tests ONLY (they test the bus's runsAs on native actions): it lets an action of
+// any kind carry runsAs. No host passes it; a guard test (make-registry.test.js) fails if act.js or make-registry.js ever names it.
+// registry.json (written by make-registry.js from registry.spec.json, the admin's approval):
 //   { "actions": [ { "name": "calc", "version": "1.0.0", "kind": "native", "file": "calc.js", "sha256": "<64 hex>",
 //                    "produces": "computed", "world": false, "runsAs": null, "needs": [], "input": { "expr": "string" },
 //                    "timeoutMs": 2000 } ] }
 //   kind      native (computes) · tentacle (reaches the outside world) · model (calls a language model)
 //   produces  the label its output earns: computed · web · model · grounded · device
 //   world     true = it changes or reaches something outside the box → the taint rule applies to its input
-//   runsAs    an identity this action runs AS (a service identity: an EUser offering a job to others) — the caller's
-//             authority chain is extended with it, so a caller can never do through it what the caller may not do itself
+//   runsAs    scripts only: the identity a script runs AS (a service identity: an EUser offering a job to others) — the
+//             caller's authority chain is extended with it, so a caller can never do through it what the caller may not do
+//             itself. An action of any other kind with runsAs is refused (1.3.0: here, at load — only the bus's own tests turn
+//             that off; before 1.3.0, in act.js after the load, which left a script that calls such an action loaded: N1)
 //   needs     Node built-in modules the file may require — a DECLARATION for the admin's review, enforced only for
 //             require(): code can still reach modules another way (e.g. process.getBuiltinModule). The admin reviews the
 //             source before pinning it; real confinement is WASM (slice 4).
@@ -52,7 +59,7 @@ function compile(src, filename, needs) {
   return mod.exports;
 }
 
-function checkEntry(e) {
+function checkEntry(e, runsAsAnyKindForBusTests) {
   const bad = (m) => { throw new Error('registry entry ' + JSON.stringify(e && e.name) + ': ' + m); };
   if (!e || typeof e !== 'object') bad('must be an object');
   if (!NAME.test(e.name || '')) bad('name must be a-z, 0-9, - (starts with a letter)');
@@ -69,24 +76,35 @@ function checkEntry(e) {
     if (e.acceptWarnings !== undefined && typeof e.acceptWarnings !== 'boolean') bad('acceptWarnings must be true or false');
   } else if (typeof e.file !== 'string' || !/^[A-Za-z0-9._-]+\.js$/.test(e.file)) bad('file must be a plain .js file name in the actions folder');
   if (e.runsAs !== undefined && e.runsAs !== null && !NAME.test(e.runsAs)) bad('runsAs must be an identity name or null');
+  if (e.runsAs && e.kind !== 'script' && runsAsAnyKindForBusTests !== true) bad('runsAs (service identities) is enabled for scripts only (v0.49.0)');   // 1.3.0: from act.js
   // 1.2.4 (v0.53.2): the form in which the KERNEL judges this action's targets (core/targets.js); a script has none (its calls are judged)
   if (e.targetForm !== undefined && !FORM_NAMES.includes(e.targetForm)) bad('targetForm must be ' + FORM_NAMES.join(' | '));
   if (e.targetForm !== undefined && e.kind === 'script') bad('a script has no targetForm (the actions it calls are judged)');
   const needs = e.needs || []; if (!Array.isArray(needs) || needs.some((n) => !BUILTINS.includes(n))) bad('needs may only list: ' + BUILTINS.join(', '));
   const input = e.input || {}; if (typeof input !== 'object') bad('input must be an object');
-  for (const [k, t] of Object.entries(input)) if (!/^[a-z][a-zA-Z0-9]{0,31}$/.test(k) || !TYPES.includes(String(t).replace(/\?$/, ''))) bad('input field ' + k + ': type must be ' + TYPES.join(' | ') + ' (optionally ending in ?)');
+  for (const [k, t] of Object.entries(input)) {
+    if (!/^[a-z][a-zA-Z0-9]{0,31}$/.test(k)) bad('input field ' + k + ': a field name must match ^[a-z][a-zA-Z0-9]{0,31}$ (a lower-case letter, then up to 31 letters or digits: no dashes)');   // 1.3.0
+    if (!TYPES.includes(String(t).replace(/\?$/, ''))) bad('input field ' + k + ': type must be ' + TYPES.join(' | ') + ' (optionally ending in ?)');
+  }
   const maxMs = e.kind === 'script' ? 600000 : 120000;
   if (e.timeoutMs !== undefined && !(Number.isInteger(e.timeoutMs) && e.timeoutMs >= 10 && e.timeoutMs <= maxMs)) bad('timeoutMs must be 10–' + maxMs);
 }
 
-// Returns { actions: Map(name → entry with .impl), refused: [{ name, reason }] }.
-function load(dir, manifestFile = 'registry.json', { scriptEngine } = {}) {
+// Returns { actions: Map(name → entry with .impl), refused: [{ name, reason }], reach, warnings } — see check().
+function load(dir, manifestFile = 'registry.json', { scriptEngine, runsAsAnyKindForBusTests } = {}) {
   const manifest = JSON.parse(fs.readFileSync(path.join(dir, manifestFile), 'utf8'));
   if (!manifest || !Array.isArray(manifest.actions)) throw new Error(manifestFile + ' must be { "actions": [ … ] }');
+  return check(dir, manifest.actions, { scriptEngine, runsAsAnyKindForBusTests });
+}
+
+// 1.3.0: the loader's whole check, for the action files in dir and a list of registry entries (each with its sha256).
+// Returns { actions: Map(name → entry with .impl), refused: [{ name, reason }],
+//           reach: Map(script → { actions, targets }), warnings: Map(script → [text]) } — reach and warnings for each LOADED script.
+function check(dir, entries, { scriptEngine, runsAsAnyKindForBusTests = false } = {}) {
   const actions = new Map(), refused = [], scripts = [];
-  for (const e of manifest.actions) {
+  for (const e of entries) {
     try {
-      checkEntry(e);
+      checkEntry(e, runsAsAnyKindForBusTests);
       if (actions.has(e.name) || scripts.some((x) => x.e.name === e.name)) throw new Error('duplicate action name');
       const file = path.join(dir, e.file);
       const st = fs.lstatSync(file);
@@ -100,7 +118,9 @@ function load(dir, manifestFile = 'registry.json', { scriptEngine } = {}) {
     } catch (err) { refused.push({ name: e && e.name, reason: err.message }); }
   }
   if (scripts.length) loadScripts(scripts, actions, refused, scriptEngine);
-  return { actions, refused };
+  const reach = new Map(), warnings = new Map();
+  for (const [n, a] of actions) if (a.kind === 'script') { reach.set(n, { actions: a.reach.actions, targets: a.reach.targets }); warnings.set(n, a.reach.warnings); }
+  return { actions, refused, reach, warnings };
 }
 
 // Scripts: read + checked by the engine; reach computed over script → script calls; cycles, world and warnings decided here.
@@ -184,4 +204,4 @@ function checkInput(spec, input) {
   return null;
 }
 
-module.exports = { load, checkInput, sha256, KINDS, PRODUCES };
+module.exports = { load, check, checkInput, sha256, KINDS, PRODUCES };

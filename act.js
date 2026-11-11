@@ -1,4 +1,4 @@
-// act.js — v1.9.0 · the host adapter: the HTTP route, the identities' grants and `create()` · changelog: act/CHANGELOG.md#actjs
+// act.js — v1.9.1 · the host adapter: the action route, the identities' grants and `create()` · changelog: act/CHANGELOG.md#actjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // ## Design
@@ -48,8 +48,10 @@
 // named action an admin installed (act/actions, every file pinned by its sha256 in act/actions/registry.json) and returns
 // its result with its provenance (basis + labels).
 //
-//   POST /api/act   Authorization: Bearer <the EUser's key>   { "action": "calc", "input": { "expr": "4837 * 2919" } }
+//   route(req, res)   req.euser: the EUser the HOST has already authenticated (this file reads no key and serves no HTTP)
+//                     req.body: { "action": "calc", "input": { "expr": "4837 * 2919" } }
 //   → { ok, action, basis, labels, value, sha256, id, trace }  ·  or  { ok: false, code, error }  (status codes: act/core/edge.js)
+//   (The reference host's server.js serves it as POST /api/act, authenticated by Authorization: Bearer <the EUser's key>.)
 //
 // WHO MAY DO WHAT is set per EUser on its Admin › Edit page, field "Actions" (users.act_grants, JSON):
 //   { "owner": "<login ID of the accountable PERSON>",
@@ -116,7 +118,7 @@ async function parseGrants(text, { actionNames, findOwner, mailAllow = [], relay
         // 1.3.0: email targets are addresses, each on this box's MAIL_ALLOW (grants only shrink)
         // 1.4.0: send targets = whom it may send to; messages targets = who may send to it — identity names (both sides must allow)
         else if (a === 'send' || a === 'messages') { for (const t of gr.targets) if (typeof t !== 'string' || !NAME.test(t)) errors.push('Actions: "' + a + '" target ' + JSON.stringify(t) + ' must be an identity name (a-z, 0-9, -; starts with a letter), e.g. u-abc123'); }
-        else if (a === 'email') { for (const t of gr.targets) { if (typeof t !== 'string' || t !== t.toLowerCase() || !smtp.ADDR.test(t)) errors.push('Actions: "email" target ' + JSON.stringify(t) + ' must be ONE lower-case plain address (name@example.com)'); else if (!mailAllow.includes(t)) errors.push('Actions: "email" target ' + t + ' is not on this box\'s mail allow-list (MAIL_ALLOW in the .env)'); } }
+        else if (a === 'email') { for (const t of gr.targets) { if (typeof t !== 'string' || t !== t.toLowerCase() || !smtp.ADDR.test(t)) errors.push('Actions: "email" target ' + JSON.stringify(t) + ' must be ONE lower-case plain address (name@example.com)'); else if (!mailAllow.includes(t)) errors.push('Actions: "email" target ' + t + ' is not on this box\'s mail allow-list (MAIL_ALLOW in create()\'s env)'); } }
         else for (const t of gr.targets) if (typeof t !== 'string' || !/^(http:\/\/)?[a-z0-9]([a-z0-9.-]{0,251}[a-z0-9])?(:\d{1,5})?$/.test(t)) errors.push('Actions: "' + a + '" target ' + JSON.stringify(t) + ' must be a lower-case host name, optionally :port (https); write http://host for plain http');   // 1.6.0 (F09)
       }
       if (gr.allowTainted !== undefined && typeof gr.allowTainted !== 'boolean') errors.push('Actions: "' + a + '".allowTainted must be true or false');
@@ -191,10 +193,10 @@ function create(opts = {}) {
   try { mailAllow = parseAllow(env.MAIL_ALLOW); } catch (e) { mailProblems.push(e.message + ' — every mail is refused until it is fixed'); }
   try { adapter = smtp.fromEnv(env, { tlsOptions: mailTls, productName: product }); } catch (e) { mailProblems.push('mail delivery is off: ' + e.message); }
   for (const p of mailProblems) log.error('[act] ' + p);
-  // The registry: refused files are reported and left out; runsAs (service identities) is enabled for SCRIPTS only (1.2.0).
+  // The registry: refused files are reported and left out; runsAs (service identities) is enabled for SCRIPTS only (1.2.0) —
+  // 1.9.1 (v0.54.2): that refusal is the registry's own (registry.check), so make-registry.js refuses the same set as this load.
   const loaded = registry.load(actionsDir, 'registry.json', { scriptEngine: engine });
   const refused = loaded.refused.slice();
-  for (const [n, e] of [...loaded.actions]) if (e.runsAs && e.kind !== 'script') { loaded.actions.delete(n); refused.push({ name: n, reason: 'runsAs (service identities) is enabled for scripts only (v0.49.0)' }); }
   for (const r of refused) log.error('[act] action refused: ' + r.name + ' — ' + r.reason);
   const actionList = [...loaded.actions.values()];
   const actionNames = actionList.map((e) => e.name);

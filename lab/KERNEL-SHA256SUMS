@@ -1,4 +1,4 @@
-c5b5391d24cde692514b839d91a44c3b8f24504478dd189b8d779efee8dd184c  ./act.js
+2a6837c00572a5e5640e817c43909ec715d50835905b484fd32171896f06364f  ./act.js
 097079ff4d2815c75cb5d5e279a750f30e6f0cee7e807e803d1a02f9f48f7cc1  ./act/actions/calc.js
 51feffe44615c1f426231d74ef1d0a65b6df59ad11f76d24c7f350d58fe86c0e  ./act/actions/date-diff.js
 f3f487bae12a758d5a7cb8e9059bd169534e9ad91b841505da927badf1e72ac1  ./act/actions/email.js
@@ -18,14 +18,14 @@ fad097ed9a43d7c33a59b59054ad4b5cc9611f25c4bf6e621bdfdcbcb4fc241f  ./act/core/edg
 e94bd1bb12aafce5f8d073ec51e9c104b0b611eb91f2a0c4dd0fab88c8a5dc50  ./act/core/names.js
 65a0e6017c426dc111c9184e7fd89c16a44431c0682df13d8838dd9050d66018  ./act/core/product.js
 c4086168ff575ffa083f4bbb77eb329bbdc22f4adbff8ee5f1a53d183e73cd1e  ./act/core/rational.js
-fb30afa4d31753ce2291a22fe0b578a50de2970f40ed3fa1da729af6338dd11a  ./act/core/registry.js
+2a4c5aede4da29a49b1c117df465fea953c5e015ef1ee3ddcaa04a5a125bfcbb  ./act/core/registry.js
 a3f06e15c3d1575231fb091657023d79d876fc382dff7b8ea58594759e1201ca  ./act/core/targets.js
 0a4cf05bb265d5bea3eb3f1198cc0d84949b065051554806aba72a4e98b035d7  ./act/daemon/pkd.js
 85613fe729a3788f8d39ce51da909c793c7e8a4157b39de24bfbb49516211ae8  ./act/daemon/supervisor.js
 938c9b586effd5da1da29188d68ab897af660a82e5d138dff0ce34859b335be8  ./act/mail/outbox.js
 53e24aac36ed0eb615bf0d843582df86fa0c84ad1edd6c9419f693d5d146f82f  ./act/mail/smtp.js
 6fd116c8eb088f5bf84ec2692c910a1de418fce10abb3fc43ce73df6e5af9a78  ./act/mailbox.js
-32227786cfc5c90847ed1bac73d43a330166480bfea05839bd21127e8bcc8122  ./act/make-registry.js
+09aa9983a46d06c3e667293d205e1e59bbb2d3d9c63379945438c88e495d57ac  ./act/make-registry.js
 7e3aba74fa0c2cb0ac84bf541ccd5947ceecd17d51ac9962c49ace928eef7347  ./act/proteus/engine.js
 609353c5d245667e6b20f3f2911f4146d86c01913981a3c6a5e907fef0fa1229  ./act/proteus/eval.js
 7fafdeaf3e47aaaeb82874b7aca3c3b1aeec3d2c5403c770f48f37f8461815bb  ./act/proteus/rational.js
