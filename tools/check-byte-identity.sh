@@ -1,9 +1,11 @@
 #!/bin/bash
 # Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-# check-byte-identity.sh — v1.2.0 (101126: the tag is required; the text says what each form checks) · was v1.1.0 (081126: an ACTBUS ref other than the tag — its act.js + act/** only, no root rule) · was v1.0.0 (071126)
+# check-byte-identity.sh — v1.2.1 (111126: the first form names the repository it is for; no code changed) · was v1.2.0 (101126: the tag is required; the text says what each form checks) · was v1.1.0 (081126: an ACTBUS ref other than the tag — its act.js + act/** only, no root rule) · was v1.0.0 (071126)
 # Two forms, both read-only (only `git ls-tree`, `rev-parse`, `rev-list`):
-#  · TAG alone: ACTBUS's TAG holds exactly SYNTHEKOS's act.js + act/** at its TAG — the same set of paths, modes and git blob hashes
-#    (the committed objects, not a checkout), nothing missing and nothing extra in the WHOLE tree — and is a root commit.
+#  · TAG alone, for the private provenance record (this repository's predecessor), whose root commit 81f4ee1 is its tag v0.53.5-headers:
+#    ACTBUS's TAG holds exactly SYNTHEKOS's act.js + act/** at its TAG — the same set of paths, modes and git blob hashes (the
+#    committed objects, not a checkout), nothing missing and nothing extra in the WHOLE tree — and is a root commit. This repository's
+#    tags hold more than the kernel (README, lab, docs, tools), so they use the second form.
 #  · TAG and REF: ACTBUS's REF (e.g. v0.1.1) holds, under act.js + act/**, exactly SYNTHEKOS's act.js + act/** at TAG. The rest of
 #    REF's tree (README, lab, docs, tools) is not compared, and REF may have history: this form does not check a root commit, it
 #    prints REF's commit count. (ACTBUS v0.3.0 is a root commit: `git rev-list --parents -n 1 v0.3.0 | wc -w` prints 1.)

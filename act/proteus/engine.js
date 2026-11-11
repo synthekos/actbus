@@ -1,6 +1,6 @@
 // engine.js — v1.5.0 · the PROTEUS-K engine: a checked script becomes a registry action · changelog: act/CHANGELOG.md#actproteusenginejs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // PROTEUS-K script engine: a checked script becomes a registry action (ACTBUS docs/proteus-k.md §7, §8)
 // 1.1.0 (self-review 30 Oct): S1/S5 — the reply and any error now ADD the labels of the returned value and of everything
 // the run computed (state, input included), not only what the bus saw arrive this run; S4 — the run starts under the

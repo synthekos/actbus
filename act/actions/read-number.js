@@ -1,6 +1,6 @@
 // read-number.js — v1.0.0 · the first number in a text, after an optional marker · changelog: act/CHANGELOG.md#actactionsread-numberjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // NATIVE: the first number in a text, after an optional marker (ACTBUS docs/capability-architecture.md §6 test 2)
 // Input { text, after? }. Output { number: "1.3725" } — the digits exactly as written (an optional minus, digits, an
 // optional decimal part). Exact jobs are code: a page's rate is read by this, never by a model. The reply carries every

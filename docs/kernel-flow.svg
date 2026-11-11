@@ -32,17 +32,19 @@
   <text x="375" y="56" text-anchor="middle" class="t" font-size="17">The bus (core) checks</text>
   <g font-size="11">
     <text x="266" y="84" class="ta">· envelope well-formed</text>
-    <text x="266" y="102" class="ta">· no duplicate id (24 h, on disk)</text>
-    <text x="266" y="120" class="ta">· trace budget (64 msgs)</text>
-    <text x="266" y="138" class="ta">· identity known</text>
-    <text x="266" y="156" class="ta">· rate per identity</text>
-    <text x="266" y="174" class="ta">· action registered (sha pin)</text>
-    <text x="266" y="192" class="ta">· granted, chain intersected</text>
-    <text x="266" y="210" class="ta">· input shape checked</text>
-    <text x="266" y="228" class="ta">· taint: web/model → world? refuse</text>
-    <text x="266" y="246" class="ta">   unless allowTainted</text>
+    <text x="266" y="99" class="ta">· no duplicate id (24 h, on disk)</text>
+    <text x="266" y="114" class="ta">· trace budget (64 msgs)</text>
+    <text x="266" y="129" class="ta">· identity known</text>
+    <text x="266" y="144" class="ta">· rate per identity</text>
+    <text x="266" y="159" class="ta">· action registered (sha pin)</text>
+    <text x="266" y="174" class="ta">· served on this machine (local)</text>
+    <text x="266" y="189" class="ta">· hop limit not reached</text>
+    <text x="266" y="204" class="ta">· granted, chain intersected</text>
+    <text x="266" y="219" class="ta">· input shape checked</text>
+    <text x="266" y="234" class="ta">· taint: web/model → world? refuse</text>
+    <text x="266" y="249" class="ta">   unless allowTainted</text>
     <text x="266" y="264" class="ta">· targets on the grant's list</text>
-    <text x="266" y="282" class="ta">· audit on disk FIRST, then run</text>
+    <text x="266" y="279" class="ta">· audit on disk FIRST, then run</text>
   </g>
   <text x="375" y="300" text-anchor="middle" class="ts" font-size="11.5">fail closed: no audit line → nothing runs</text>
   <text x="375" y="316" text-anchor="middle" class="ts" font-size="11.5">one trace per run · finish() ends it</text>

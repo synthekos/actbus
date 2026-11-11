@@ -1,6 +1,6 @@
 // durable.js — v1.0.0 · an append-only file whose every line is on disk before the call returns · changelog: act/CHANGELOG.md#actcoredurablejs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // an append-only file whose every line is ON DISK before the call returns
 // "No audit line, no run" means the line survives a crash, not just that it reached the page cache: the file is opened ONCE (append,
 // 0600), each line is written with writeSync and flushed with fsyncSync. Before each line the path is checked: a rotated or removed file is

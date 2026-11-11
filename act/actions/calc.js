@@ -1,6 +1,6 @@
 // calc.js — v1.0.0 · exact arithmetic on numbers: + − × ÷ ^ and parentheses · changelog: act/CHANGELOG.md#actactionscalcjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // exact arithmetic: numbers, + - * / ^, parentheses, decimal points — nothing else
 // No eval, no floating point: a small recursive-descent parser over exact rationals. 0.1 + 0.2 is exactly 0.3;
 // 4837 * 2919 is 14119203 (both models got this wrong on every pass: ACTBUS docs/capability-architecture.md §2). Precedence: ^ (right-assoc) > unary − >

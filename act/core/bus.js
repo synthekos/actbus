@@ -1,6 +1,6 @@
 // bus.js — v1.5.0 · the message bus: every check in order, then the audit line, then the action · changelog: act/CHANGELOG.md#actcorebusjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // ## Design
 // the KERNEL judges targets before dispatch, by the entry's declared targetForm (core/targets.js) · F04 the identity snapshot belongs to the CALL (ask { ids } → dispatch(env, ids),
 // children inherit it) — concurrent requests no longer share this.ids; F05 an audit FILE is written through durable.js (fsync per line:

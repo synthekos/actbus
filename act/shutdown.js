@@ -1,7 +1,7 @@
 // shutdown.js — v1.1.0 · the host's stop path stops every script daemon first · changelog: act/CHANGELOG.md#actshutdownjs
 // SPDX-License-Identifier: Apache-2.0
 // ## Design
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // installShutdown({ stop, server }) — wired once by server.js. `server` may be the server or a function returning it (server.js passes
 // () => server, so the wiring can sit before the server is made). Before 0.53.5 server.js had NO SIGTERM / SIGINT handler: a stopped server died
 // at once and its script daemons were left to notice the closed IPC channel (pkd.js 'disconnect' → exit), which a BUSY daemon only does after

@@ -1,6 +1,6 @@
 // messages.js — v1.1.1 · read the waiting messages on one topic from the caller's own mailbox · changelog: act/CHANGELOG.md#actactionsmessagesjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // TENTACLE: read the waiting messages on one topic from the running identity's own mailbox (ACTBUS docs/functions-and-mailboxes.md §3)
 // Input { topic }. Returns a list (oldest first, at most 20) of { id, from, topic, body, at }. Only senders named in this grant's
 // targets are accepted (checked again at read time). A message read here is CLAIMED for this run: removed when the run succeeds,

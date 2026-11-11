@@ -1,6 +1,6 @@
 // email.js — v1.0.0 · queue one plain-text mail to an allowed recipient · changelog: act/CHANGELOG.md#actactionsemailjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // TENTACLE: queue one plain-text mail to an allowed recipient (slice 3: ACTBUS docs/capability-architecture.md §7 item 3)
 // Input { to, subject, text }. One recipient; no CC/BCC, no attachments. This action never touches the network: it checks, then
 // hands the mail to the core's outbox (ctx.queueMail), which checks again, adds the provenance footer and queues it; a delivery

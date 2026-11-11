@@ -1,6 +1,6 @@
 // names.js — v1.0.0 · the name service: from a name to where it is served · changelog: act/CHANGELOG.md#actcorenamesjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // the name service: names → where they are served (ACTBUS docs/capability-architecture.md §3; QNX name_attach / name_open)
 // A caller names an ACTION or a MODEL, never a machine. The name service says which node serves it. On one box every
 // name resolves to 'local'; under SYNTHX the same lookup returns another node and the bus forwards the message there.

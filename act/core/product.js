@@ -1,6 +1,6 @@
 // product.js — v1.0.0 · the product name the kernel writes where others can see it · changelog: act/CHANGELOG.md#actcoreproductjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // The product name the kernel writes where others can see it: the fetch User-Agent (<name>-fetch/1.0), the mail footer
 // ("Sent by <name> for …"), the X-Mailer header, and the message of a paused script daemon. A host passes its own name to
 // create({ productName }); without one the kernel calls itself ACTBUS (DEFAULT, the only place that name is written).

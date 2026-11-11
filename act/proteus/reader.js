@@ -1,6 +1,6 @@
 // reader.js — v1.0.0 · the PROTEUS-K reader: source text to a tree · changelog: act/CHANGELOG.md#actproteusreaderjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // PROTEUS-K v0 reader: source text → tree (ACTBUS docs/proteus-k.md §2)
 // The reader only builds a tree; it evaluates nothing. Every node carries its line:column so every error can name it.
 //   form    := atom | '(' form* ')'

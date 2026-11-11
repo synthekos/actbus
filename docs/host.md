@@ -1,7 +1,7 @@
 <!-- Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0 -->
 # The host's contract
 
-What a host gives the kernel, what it gets back, and what it must call. `examples/minimal-host.js` shows the smallest case; this page is the full reference. Line numbers are of the files in this repository.
+What a host gives the kernel, what it gets back, and what it must call. `examples/minimal-host.js` shows the smallest case, and `examples/script-host.js` a host with one script; this page is the full reference. Line numbers are of the files in this repository.
 
 ## What `create()` returns, and what a host must call
 
@@ -59,6 +59,8 @@ Before the bus sees a request, `route` (`act.js`:321) does this, in order:
 5. for a world action, a `send` or a script, adds the labels of every web or model text this EUser could also receive (not for a script that declares no input, and not for the own `send` of an EUser with `operatedByPerson`).
 
 The refusals of steps 1, 3 and 4 are audited, at most 10 a minute per EUser. Then the bus runs its own checks (README, the list at the top).
+
+`act/core/edge.js` also exports `createEdge` and `keyResolver`: a second handler for `POST /api/act`, which turns a key into an identity. It is the core's own test edge, used by `act/test/`. A host uses `act.route`, and authenticates its EUsers itself. `act.js`'s header (line 51) still shows a request with `Authorization: Bearer <the EUser's key>`: that is how SYNTHEKOS authenticates, not something the kernel reads (README, Known gaps).
 
 **The reply** is JSON: `{ "ok": true, … }` with status 200, or `{ "ok": false, "code": "…", "error": "…" }`. The status of a refusal by the bus (`act/core/edge.js`:16):
 
@@ -128,9 +130,11 @@ Each trigger has an `id`, a `script` and the identity it `runsAs` (an EUser's id
 - `at`: `HH:MM` with a `tz`, and optionally `days` (`daily`, `mon-fri`, `sat-sun`, or a list such as `"mon,wed"`);
 - `on: "message"` with a `topic`.
 
-`missed` is `skip` (the default) or `run-late`, and `input` is an object. At most 20 triggers; a bad entry is refused and the others load (`act/scheduler.js`, `validate`). A fire is an ordinary message from the `runsAs` identity, through every check of the bus.
+`missed` is `skip` (the default) or `run-late`, and `input` is an object. At most 20 triggers; a bad entry is refused and the others load (`act/scheduler.js`, `validate`). A fire is an ordinary message from the `runsAs` identity, through every check of the bus. So the `runsAs` EUser must hold the script and every action the script reaches, each in its own grants, as any caller of the script must (`docs/proteus-k.md` §7, the worked example).
 
-**Switching one off.** `node act/trigger-off.js <id> --app-dir <appDir>` writes `<appDir>/act-files/.scheduler/off/<id>`, and the running kernel switches that trigger off within 15 s and audits it. A kernel with no `triggers.json` runs no scheduler and does not read the folder. Without `--app-dir` it uses the folder that holds `act.js`, which is `create()`'s default `appDir`. If `<appDir>/act-files/` does not exist, it writes nothing and exits 2. A trigger comes back only when its entry in `triggers.spec.json` changes and `make-registry.js` approves the file again. `act-files/.scheduler/off/` matters even with no triggers: the off-folder is state, and a host that enables triggers later inherits whatever is in it.
+**Switching one off.** `node act/trigger-off.js <id> --app-dir <appDir>` reads `<appDir>/act-files/.scheduler/scheduler.json`, where the scheduler writes the ids of the triggers it loaded at every start, and writes `<appDir>/act-files/.scheduler/off/<id>` only for an id on that list. At the scheduler's next tick (every 15 s, `act.js`:378) the kernel applies the file, deletes it and audits `trigger-switched-off`; from then on "switched off" is kept in `scheduler.json`, not in `off/`. The ✓ line says that, and a second line names the file, the audit log and the start the list came from. Without `--app-dir` it uses the folder that holds `act.js`, which is `create()`'s default `appDir`. It writes nothing and exits 2 for an id that is not on the list (a mistyped id, or a trigger refused at start), when there is no `scheduler.json` (no scheduler has started there: a kernel with no `triggers.json` runs none), when that file has no list (a scheduler before `act/scheduler.js` 1.3.0 wrote it: restart the kernel), and when `<appDir>/act-files/` does not exist. A trigger comes back only when its entry in `triggers.spec.json` changes and `make-registry.js` approves the file again.
+
+**What the list cannot know.** It is the list of the scheduler's last start, and the script cannot tell whether that kernel is running now. If the kernel stopped and `triggers.json` changed since, an id from the old list is still accepted; the next start that does not load it audits `trigger-off-unknown` and switches nothing off, so the audit shows it. There is no heartbeat, on purpose: it would be a second piece of kernel state for that one edge. An id that is already off is accepted, and switching it off is audited again.
 
 ## Your own actions and scripts
 

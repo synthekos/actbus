@@ -1,6 +1,6 @@
 // envelope.js — v1.2.0 · the one message format, and the labels it carries · changelog: act/CHANGELOG.md#actcoreenvelopejs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // the one message format for everything (ACTBUS docs/capability-architecture.md §1 item 2)
 // 1.1.0 (ACTBUS docs/proteus-k.md §8): optional ctl — the labels of the CONDITIONS a message was sent under (PROTEUS-K rule b). Checked like
 // labels; a child inherits its parent's ctl and may add to it, never remove. The bus treats ctl as taint only under strictControl.

@@ -2,6 +2,8 @@
 
 The entries below were moved verbatim from the file headers of `act/**` and `act.js` on 8 Nov 2026 (SYNTHEKOS tag `v0.53.5-changelog`). One section per file; within a section the newest entry is first and the oldest last; review tags (F-B, H1, R4, S3 …) are as they were. Each file keeps its current version on line 1.
 
+**10 Nov 2026 · SYNTHEKOS tag `v0.54.1` · the copyright line, no code.** In the 36 kernel files whose short copyright line also named a company, the company name is removed: the line names the author alone, the same rights holder as `LICENSE` and every `Copyright (c)` line. No kernel file's version changed and no code changed: every file's tokens are identical before and after. Ten of the files are action files, so `act/actions/registry.json` pins their new sha256 (11 entries: `file.js` serves two); nothing else in it changed, its approval time included.
+
 **9 Nov 2026 · SYNTHEKOS tag `v0.53.7-cleanup` · names and test data, no code.** In the entries below, one kind of edit was made in place, and nothing else in them changed: names, and pointers to documents a reader cannot open. A reviewer is called a second-reader review, with its round, as the comments say; an owner's decision is credited to the owner; a machine is called by its system (macOS), and a model or a node by its neutral test name; a build kit is called by the SYNTHEKOS release it made; a pointer to an internal document names the ACTBUS document that holds the same text (`docs/reviews.md`, `docs/functions-and-mailboxes.md`), or is dropped. Every replaced line is declared in the release's kit, and the originals are in the private provenance record (`synthekos/actbus-provenance`), offered to a reviewer on request. The 8 Nov note below says the entries name reviewers as the build history named them; that describes them before this note. The kernel's tests changed their test data the same way: the addresses are `alex@example.org` (the recipient), `alex@example.com` (the sender) and `alex@example.net` (the mail user), the mail server is `smtp.example.com`, and the identities are `alex`, `helper` and `helper-thoughts`, as in the lab; two test names changed with them, and an assertion message no longer names the owner. Comments that named a build kit name the release instead, and two comments show the new identities. No version changed and no kernel code changed. v0.53.7 was built in three rolls (v1.0.0, r1, r2); the first two were superseded with identical release bytes, tooling only.
 
 **8 Nov 2026 · SYNTHEKOS tag `v0.53.6-docrefs` · comment only.** The kernel's comments no longer point to documents a reader cannot open. A design reference now names its section of `docs/capability-architecture.md`, `docs/proteus-k.md` or `docs/functions-and-mailboxes.md` in the ACTBUS repository; a review round is called a second-reader review, with its round; an owner's decision is written as "(owner decision, <date>)"; three build-kit names are gone; two comments in `act.js` name the local model server without naming a product. Three test names and one comment inside a PROTEUS-K test script changed with them. No version changed and no code changed: every file's tokens are identical before and after, except those three test names and the two copies of that script, which the PROTEUS-K reader parses to the same tree. The entries below this note are the build history, left as written: reviewers are named in them as the build history named them, and `docs/reviews.md` in the ACTBUS repository says what each review was.
@@ -169,6 +171,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/make-registry.js
 
+- v1.1.1 (101126 · v0.54.0: an on-message trigger's approval line reads "on message, topic <topic>", not "at undefined undefined"; the file it writes is unchanged)
 - v1.1.0 (031126 slice 3: also approves triggers — triggers.spec.json → triggers.json, every entry checked; a bad entry, or one naming a script that is not a registered script, stops it: nothing is written)
 - was v1.0.0 (281028)
 
@@ -211,6 +214,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/scheduler.js
 
+- v1.3.0 (101126 · v0.54.0: at every start the state gains `loaded: { at, ids }`, the ids of the triggers it loaded — a refused entry is not among them; the list is replaced at each start, never a union — and act/trigger-off.js reads it. load() is unchanged, so an older state file still loads and the next start adds the list. The design comment on the state names `<stateDir>/scheduler.json`, the stateDir act.js passes, and that act.js consumes the files in `.scheduler/off/`)
 - v1.2.0 (061126 TRANSIENT refusals, second-reader review, round 3: a TIME trigger's fire that the kernel refused with transient: true — the run never started — climbs ONE ladder, the same for every code: retry after retryMs[0] (5 s, longer than the supervisor's 2 s grace), then retryMs[1] (30 s), then `lost` — the code is the WHY, in the audit line, not in the schedule. One exception, because it was found end to end: a DAEMON_EVICTING refusal is never the last word — a slot is already being freed for this fire — so if the ladder is spent it gets one more retryMs[0] try, once per fire (at most 4 tries; a busy run that outlasts the first rung makes the 30 s retry the evicting start, and without this the fire was lost). A retry is the same fire: it does not move the trigger's `last`. IN MEMORY: a pending retry lives only in this process. A restart drops it, and that fire is then LOST, not late — its `last` was written when it first went out, so the next fire is the next period; the `missed` policy (skip / run-late) is about periods that fall due while the box is down, as before. Nothing is audited at the restart (there is nothing to audit then). RATE: every try is a fire like any other — it counts once in the scheduler's per-identity fires-per-hour cap and once in the bus's per-identity rate (bus.js, counted before dispatch). At most 4 tries per fire, so it cannot matter; written here so nobody wonders. Any other failure is not retried. A normal fire that comes due first replaces the pending retry (never two). A MESSAGE trigger needs no retry: the run claimed nothing, the messages are still waiting, and the next tick fires again)
 - was v1.1.0 (041126 MESSAGE TRIGGERS, ACTBUS docs/functions-and-mailboxes.md §3: { id, script, runsAs, on: "message", topic } fires when runsAs has waiting messages on that topic (pending(identity, topic) from the core's mailbox); no overlap, the per-identity cap and the switch-off apply; a capped message trigger logs at most once an hour)
 - was v1.0.1 (031126 review: M3 an `at` trigger steps through LOCAL dates — a 23:30 trigger no longer skips the spring-forward day; L2 the state maps have no prototype — a trigger named "constructor" is not "switched off"; an `every` trigger's first due time is kept, so restarts more often than its period no longer push it away for ever)
@@ -280,6 +284,10 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 - v1.0.1 (061126: the bus tests load BUILT-IN actions only, from a temp copy — an installed script no longer breaks them)
 - v1.0.0 (041126)
 
+## act/test/make-registry.test.js
+
+- v1.0.0 (101126 · v0.54.0: make-registry.js on a temp folder — the three kinds of trigger (every, at, on message) give their exact approval lines and never "undefined", FAIL-FIRST on v0.53.9's file; a trigger naming a script that is not registered stops it: exit 1, no triggers.json)
+
 ## act/test/p0.test.js
 
 - v1.0.0 (051126 · v0.53.0 · second-reader review, fix list P0)
@@ -307,6 +315,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/test/scheduler.test.js
 
+- v1.1.0 (101126 · v0.54.0: + FAIL-FIRST loaded ids — the list is written at start, a refused id is not in it, a restart replaces it, and a start that loads nothing writes an empty list)
 - v1.0.0 (031126)
 
 ## act/test/script.test.js
@@ -362,9 +371,11 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/test/trigger-off.test.js
 
+- v1.1.0 (101126 · v0.54.0: 7 tests, every refusal of the script on its own failure path — end to end, the ✓ line is the kernel's sentence and the audit has trigger-switched-off and no trigger-off-unknown; an id the scheduler did not load (mistyped, or refused at start) is refused, exit 2, no ✓, no off-file, and the real trigger still fires; no state file; an unusable one (not JSON, no list, ids not a list); no act-files/; the default folder; the environment is never read. Four FAIL-FIRST tests fail on v0.53.9's script; the end-to-end test and the default guard are renamed for what they now check)
 - v1.0.0 (101126 · v0.53.9: the trigger kill switch, end to end — with `--app-dir`, a host that passes its own appDir gets the trigger switched off and it does not fire; a folder where no kernel has run is refused (exit 2, no ✓, nothing written); with no `--app-dir` it writes beside act.js, as before. Two FAIL-FIRST tests fail on v0.53.8's script; the guard passes on both.)
 
 ## act/trigger-off.js
 
+- v1.2.0 (101126 · v0.54.0: a reader of kernel state, not a guesser — it reads `<dir>/act-files/.scheduler/scheduler.json`, where the scheduler writes the ids it loaded at every start, and writes the off-file only for one of them. It writes nothing and exits 2 when the state file is absent, unreadable or has no list, or when the id is not in the list (a mistyped id, or one refused at start); the message names the loaded ids. Every refusal is exit 2, and the message tells them apart. The ✓ line says what the kernel will do: "wrote the off-file for <id>; the scheduler applies it at its next tick, audited as trigger-switched-off"; a second line names the file, the audit log and the start the list came from. "within 15 s" is gone: the tick period is the host's. The list is the last start's; the script cannot tell whether that kernel is running now)
 - v1.1.0 (101126 · v0.53.9: `--app-dir <dir>` reaches the appDir the host gave to create() (no environment variable: a stale one could reach another kernel on the same machine); fail closed — unless <dir>/act-files/ exists it writes nothing and exits 2, and it no longer creates act-files/; the ✓ line names the file it wrote. Without `--app-dir` the folder is the one that holds act.js, as before.)
 - v1.0.0 (031126)

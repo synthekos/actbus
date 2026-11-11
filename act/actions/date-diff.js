@@ -1,6 +1,6 @@
 // date-diff.js — v1.0.0 · whole days between two calendar dates, and the weekday of each · changelog: act/CHANGELOG.md#actactionsdate-diffjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // whole days between two calendar dates, and the weekday of each
 // Input { from: "2026-10-28", to: "2026-10-31", weekday?: "Tuesday" } — strict YYYY-MM-DD; impossible dates (2026-02-30)
 // are refused. With weekday, it is checked against `to` and a mismatch is REFUSED rather than guessed

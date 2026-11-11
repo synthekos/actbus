@@ -1,4 +1,4 @@
-// scheduler.test.js — v1.0.0 · tests: triggers · changelog: act/CHANGELOG.md#acttestschedulertestjs
+// scheduler.test.js — v1.1.0 · tests: triggers · changelog: act/CHANGELOG.md#acttestschedulertestjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // slice 3 step 2: triggers (act/scheduler.js). Every test FAILS without scheduler.js.
 // A fake clock and a fake bus for the rules; one test through the real bus (the runsAs grant). Run: node --test test/scheduler.test.js
@@ -93,6 +93,17 @@ test('a per-identity cap on fires per hour', async () => {
   for (let i = 0; i < 3; i++) { clk.t += 60000; await s.tick(); }
   assert.equal(f.calls.length, 3);
   assert.ok(audit.some((r) => r.kind === 'trigger-skip' && /reached 3 fires this hour/.test(r.why)));
+});
+
+test('FAIL-FIRST loaded ids (1.3.0): every start writes the ids it loaded to the state — refused entries are not among them, and a restart replaces the list', () => {
+  const dir = tmp(), read = () => JSON.parse(fs.readFileSync(path.join(dir, 'scheduler.json'), 'utf8')).loaded;
+  sched([{ id: 'a', script: 's', runsAs: 'r', every: 60 }, { id: 'b', script: 's', runsAs: 'r', every: 30 }, { id: 'c', script: 's', runsAs: 'r', on: 'message', topic: 'inbox' }], { dir });
+  assert.deepEqual(read().ids, ['a', 'c'], 'b is refused (every < 60 s), so it is not loaded');
+  assert.equal(read().at, new Date(Date.UTC(2026, 10, 3, 15, 0)).toISOString());
+  sched([{ id: 'c', script: 's', runsAs: 'r', on: 'message', topic: 'inbox' }], { dir, T0: Date.UTC(2026, 10, 3, 16, 0) });
+  assert.deepEqual(read().ids, ['c'], 'the list is the last start\'s, never a union');
+  sched([], { dir, T0: Date.UTC(2026, 10, 3, 17, 0) });
+  assert.deepEqual(read().ids, [], 'a start that loads nothing writes an empty list');
 });
 
 test('a corrupt state file stops the scheduler (no silent reset)', () => {

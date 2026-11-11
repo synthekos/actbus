@@ -1,6 +1,6 @@
 // supervisor.js — v1.1.0 · starts, bounds and stops one script daemon per script identity · changelog: act/CHANGELOG.md#actdaemonsupervisorjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // runs PROTEUS-K scripts in separate daemons (pkd.js), one per script identity (slice 3: ACTBUS docs/capability-architecture.md §7 item 3)
 // The core keeps every decision: a daemon's action calls go through the bus as the script's own identity (same grants, labels,
 // audit), its state writes go to the core's state file, and its answer is just a message. The supervisor only manages processes:

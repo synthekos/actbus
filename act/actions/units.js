@@ -1,6 +1,6 @@
 // units.js — v1.0.0 · exact unit conversion: length, mass, volume, pressure, energy, speed, temperature · changelog: act/CHANGELOG.md#actactionsunitsjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // exact unit conversion (length, mass, volume, pressure, energy, speed, temperature)
 // Input { value: "2.5", from: "bar", to: "psi" } — value is a STRING so it stays exact ("0.1" is 1/10).
 // Factors are the exact definitions (inch = 0.0254 m, pound = 0.45359237 kg, US gallon = 3.785411784 L,

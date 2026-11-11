@@ -1,6 +1,6 @@
 // model.js — v1.0.0 · ask a language model, as a permitted, labelled and audited action · changelog: act/CHANGELOG.md#actactionsmodeljs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // ask a language model — as an ACTION, so it is permitted, routed, labelled and audited
 // Input { model: "<model>", prompt: "…", system?: "…" }. The model must be on the list of EVERY identity in the
 // chain (models intersect). The name service says which node serves the model (ACTBUS docs/capability-architecture.md §3); slice 1 serves local only.

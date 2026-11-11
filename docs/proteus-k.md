@@ -119,7 +119,17 @@ A registry entry (`registry.spec.json`, compiled by `make-registry.js`, sha256-p
 
 Any failure means that script is refused at start, as an action file would be. **`runsAs` is allowed for `kind: script` only.** A native action may not run as another identity.
 
-**A worked example.** An administrator copies `act/actions/` to a folder of the host's own, writes the entry into that copy's `registry.spec.json`, puts the `.pk` file next to it, runs `node act/make-registry.js <that folder>`, and passes the folder to `create()` as `actionsDir` (`docs/host.md`). `make-registry.js` pins every file's sha256 into `registry.json`, and running it is the approval. Doing this in `act/actions/` itself would change kernel files: `registry.json` is rewritten, with a new approval time. This repository ships no `.pk` file; the lab's scenarios carry complete scripts. `lab/suites/injection/limit-page-decides-whether.json` is a short one (`scripts[0].source`), and `runScenario` in `lab/lab.js` writes each scenario's scripts to `.pk` files and pins them the same way.
+**A worked example.** An administrator copies `act/actions/` to a folder of the host's own, writes the entry into that copy's `registry.spec.json`, puts the `.pk` file next to it, runs `node act/make-registry.js <that folder>`, and passes the folder to `create()` as `actionsDir` (`docs/host.md`). `make-registry.js` pins every file's sha256 into `registry.json`, and running it is the approval. Doing this in `act/actions/` itself would change kernel files: `registry.json` is rewritten, with a new approval time. `examples/script-host.js` does all of this, end to end, with a one-line script, `answer.pk`, that calls `calc`. Run it from the repository root with `node examples/script-host.js`; it works in a new temp folder. It has three records: the person `alex`, who owns both EUsers; `caller`, the EUser that calls the script; and `helper`, the EUser the script runs as (`"runsAs": "u-00000000-0000-4000-8000-000000000003"`). A script's own identity is an EUser record like any other: owned by a person, with grants of its own. The grant JSON of each call is `{ "owner": "alex", "actions": { … } }`, with the actions its line names. It prints one line per call (each call's id and trace are shown here as `…`, and the temp folder is shortened):
+```
+approved: ✓ answer 1.0.0 answer.pk 11cb86ab7a73
+caller holds answer, calc · helper holds calc → HTTP 403 {"ok":false,"id":"…","trace":"…","action":"answer","code":"NOT_PERMITTED","error":"not permitted: u-00000000-0000-4000-8000-000000000003 may not run answer"}
+caller holds answer, calc · helper holds answer, calc → HTTP 200 {"ok":true,"id":"…","trace":"…","action":"answer","basis":"computed","labels":["device","person","computed"],"value":{"result":"42","exact":true,"fraction":"42"},"sha256":"11cb86ab7a73"}
+caller holds calc · helper holds answer, calc → HTTP 403 {"ok":false,"id":"…","trace":"…","action":"answer","code":"NOT_PERMITTED","error":"not permitted: u-00000000-0000-4000-8000-000000000002 may not run answer"}
+caller holds answer · helper holds answer, calc → HTTP 422 {"ok":false,"id":"…","trace":"…","action":"answer","code":"ACTION_ERROR","error":"ACTION: calc did not run: NOT_PERMITTED not permitted: u-00000000-0000-4000-8000-000000000002 may not run calc (line 1:1)","labels":["device","person","computed"]}
+caller holds answer, calc · helper holds answer → HTTP 422 {"ok":false,"id":"…","trace":"…","action":"answer","code":"ACTION_ERROR","error":"ACTION: calc did not run: NOT_PERMITTED not permitted: u-00000000-0000-4000-8000-000000000003 may not run calc (line 1:1)","labels":["device","person","computed"]}
+audit log: <temp folder>/actbus-script-…/app/logs/act.jsonl
+```
+The first call is refused because `helper`, the script's own identity, does not hold `answer`: the script runs as `helper`, so `helper` must be granted the script too. The second call runs. The last three show that each of the other grants is needed: without `answer`, the caller is refused (403); without `calc`, for either EUser, the script runs and its `calc` is refused (422). The lab's scenarios carry more scripts, each run as the EUser that calls it (`runScenario` in `lab/lab.js`).
 
 ## 8. How the core carries scripts
 1. **Labels per child.** For a script, the interpreter gives each child message the labels of its own input values (plus the envelope's labels), and `ctl` = C. Native actions keep the conservative rule: every child gets every label the action has received. In both cases the script's own reply accumulates everything.
@@ -128,7 +138,10 @@ Any failure means that script is refused at start, as an action file would be. *
 4. **Capabilities** have the grant flag `strictControl`.
 5. **Escalation at the edge.** A key holder that can receive web or model text has those labels added to its other world calls. For a call to a script, this applies **whenever the script declares any input field**, because a boolean or a number can carry page data too, a bit at a time. A script with no input is not escalated. Every script call still needs:
    - the script granted to the caller by an administrator;
+   - the script granted to its own identity too, since it runs as that identity;
    - every action the script reaches granted both to the caller and to the script's own identity.
+
+   `examples/script-host.js` shows each of the four refused without it (§7).
 
 ## 9. Tests (each must fail on a deliberately broken interpreter)
 - **Reader:** every grammar edge; the limits (16 KB, depth 64, 100 iterations, 1 000 items, fuel); errors carry line and column.

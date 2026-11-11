@@ -1,6 +1,6 @@
 // send.js — v1.0.0 · send one message to another identity's mailbox · changelog: act/CHANGELOG.md#actactionssendjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // TENTACLE: send one message to another identity's mailbox (ACTBUS docs/functions-and-mailboxes.md §3) — the core checks and writes it
 // Input { to, topic, body }: to = an identity name (an EUser is u-<id>), topic = a name, body = text (to-json for structured data).
 // BOTH sides must allow (owner decision, 4 Nov 2026): the sender's grant for send names the recipient (targets, intersected along the chain) and the

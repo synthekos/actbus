@@ -1,4 +1,4 @@
 {
-  "version": "0.53.9",
-  "note": "the kernel is this repo: act.js + act/ at tag v0.3.2 = SYNTHEKOS tag v0.53.9 (the trigger kill switch reaches the host's appDir), byte-identical"
+  "version": "0.54.1",
+  "note": "the kernel is this repo: act.js + act/ at tag v0.3.3 = SYNTHEKOS tag v0.54.1 (the trigger kill switch reads the scheduler's list; the copyright line), byte-identical"
 }

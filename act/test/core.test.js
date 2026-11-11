@@ -1,6 +1,6 @@
 // core.test.js — v1.1.1 · tests: the capability core, one test per rule · changelog: act/CHANGELOG.md#acttestcoretestjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // capability core: every rule of ACTBUS docs/capability-architecture.md as a test
 //   node --test test/      (Node 18+; no dependencies)
 'use strict';

@@ -1,6 +1,6 @@
 // mailbox.js — v1.2.1 · mailboxes: identities send each other messages; a waiting message can start a script · changelog: act/CHANGELOG.md#actmailboxjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // the core's MAILBOXES: identities send each other messages; a message-triggered script reads them (ACTBUS docs/functions-and-mailboxes.md §3)
 // The core owns every mailbox (act-files/.mailbox/<identity>/<id>.json, temp file + rename). Scripts never touch a file: the `send` and
 // `messages` actions ask the bus, which checks BOTH sides (owner decision, 4 Nov 2026): the sender's grant for send names the recipient, and the

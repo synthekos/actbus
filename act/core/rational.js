@@ -1,6 +1,6 @@
 // rational.js — v1.1.0 · exact rational arithmetic on BigInt · changelog: act/CHANGELOG.md#actcorerationaljs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // exact rational arithmetic on BigInt (no floating point anywhere)
 // A value is { n, d } with d > 0 and gcd(n, d) = 1. Decimals are parsed exactly ("0.1" is 1/10, not 0.1000000000000000055…).
 // toDecimal() is exact when the denominator has only the prime factors 2 and 5; otherwise it rounds (half away from zero)

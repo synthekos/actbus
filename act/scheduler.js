@@ -1,6 +1,6 @@
-// scheduler.js — v1.2.0 · triggers: scripts run on a schedule an administrator wrote · changelog: act/CHANGELOG.md#actschedulerjs
+// scheduler.js — v1.3.0 · triggers: scripts run on a schedule an administrator wrote · changelog: act/CHANGELOG.md#actschedulerjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // ## Design
 // TRIGGERS for PROTEUS-K scripts, in the kernel (slice 3: ACTBUS docs/capability-architecture.md §7 item 3)
 // Scripts run on their own, on a schedule an ADMIN wrote: act/actions/triggers.spec.json, read at start (no editing in the browser).
@@ -15,8 +15,11 @@
 //   · a per-identity cap on fires per hour (default 60);
 //   · `at` uses the box clock and Intl time zones: a daylight-saving jump fires once, never twice; a time that does not exist that
 //     day (spring forward) fires at the first minute after it;
-//   · state (last fire per trigger, triggers switched off) lives in <filesRoot>/.pk-state/scheduler.json (temp file + rename), which
-//     no identity's file folder can reach, and survives restarts;
+//   · state (last fire per trigger, triggers switched off, the ids loaded at this start) lives in <stateDir>/scheduler.json (temp
+//     file + rename) and survives restarts; act.js passes stateDir <appDir>/act-files/.scheduler, which no identity's file folder can
+//     reach. act.js consumes each file in .scheduler/off/ at the next tick: "switched off" is kept here, not in off/;
+//   · 1.3.0: at every start the ids it loaded (refused entries are not among them) are written to the state as loaded.ids, so
+//     act/trigger-off.js can refuse an id this scheduler does not run, and refuse when there is no state at all;
 //   · a trigger can be SWITCHED OFF without editing the file (free); it comes back ON only when its entry in the file changes (an
 //     admin edits the file) — a hijacked admin page can stop schedules, never start them.
 // new Scheduler({ bus, spec, stateDir, clock, audit, perHour, graceMs, retryMs }) · .tick() (called every 15 s by start(); tests call it)
@@ -128,6 +131,7 @@ class Scheduler {
       if (t.on) { this.next.set(t.id, null); continue; }              // 1.1.0: a message trigger has no time
       this.next.set(t.id, last ? this.after(t, last) : t.every ? this.after(t, this.state.first[t.id].at) : this.after(t, now));
     }
+    this.state.loaded = { at: new Date(now).toISOString(), ids: this.triggers.map((t) => t.id) };   // 1.3.0: read by trigger-off.js
     this.save();
   }
   log(kind, rec) { try { this.audit({ kind: 'trigger-' + kind, ...rec }); } catch { /* best effort */ } }

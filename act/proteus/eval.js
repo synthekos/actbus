@@ -1,6 +1,6 @@
 // eval.js — v1.6.1 · the PROTEUS-K evaluator: total, with provenance labels on every value · changelog: act/CHANGELOG.md#actproteusevaljs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // ## Design
 // · (define (name arg …) body …) — top level only; a body may call only functions defined ABOVE it, so calls form no cycle and every
 //   script still terminates; a function is not a value (no lambda, no closures: a body sees only its own arguments). A call evaluates

@@ -1,6 +1,6 @@
 // smtp.js — v1.1.0 · a minimal SMTP client with STARTTLS and no dependencies · changelog: act/CHANGELOG.md#actmailsmtpjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // our own minimal SMTP client, zero dependencies (slice 3: ACTBUS docs/capability-architecture.md §7 item 3) — the first mail delivery adapter
 // One message, one recipient, text only:  220 → EHLO → STARTTLS → (TLS, certificate CHECKED) → EHLO → AUTH PLAIN → MAIL FROM →
 // RCPT TO → DATA (RFC 5322 headers, UTF-8 subject encoded, body quoted-printable, CRLF line ends, dot-stuffed) → QUIT.

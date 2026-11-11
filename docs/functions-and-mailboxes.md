@@ -75,7 +75,7 @@ Three decisions were taken for (b):
   - `refused`.
 
   The mailbox lines, and the run lines of `send` and `email`, carry the body's sha256 and size, **never the body**. Other actions log their input as they always have, so a body passed on to `file-append` or `model` appears in *that* action's line.
-- **On-message triggers.** A trigger `{ id, script, runsAs, on: "message", topic }` fires the script when its identity has messages waiting on that topic. There is no overlap, a cap per identity, and a kill switch. Because PROTEUS-K is total, an action cannot run inside `collect`. So a worker reads its batch and sends one reply.
+- **On-message triggers.** A trigger `{ id, script, runsAs, on: "message", topic }` fires the script when its identity has messages waiting on that topic. There is no overlap, a cap per identity, and a kill switch. Because collection forms take only pure functions (§2), an action cannot run inside `collect`. So a worker reads its batch and sends one reply.
 
 ## 4. Reviews
 **R2, adversarial second-reader review: 2 high, 4 medium, 6 low.**

@@ -1,6 +1,6 @@
 // outbox.js — v1.1.0 · the mail outbox: queue, allow-list and delivery; scripts never touch the network · changelog: act/CHANGELOG.md#actmailoutboxjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // the core's mail outbox (slice 3: ACTBUS docs/capability-architecture.md §7 item 3) — scripts never touch the network
 // The email action runs its checks and calls enqueue(); the outbox runs the box-wide checks again (MAIL_ALLOW, the grant's
 // recipients, the rate caps), adds the provenance footer and writes ONE record file (<dir>/<id>.json, temp file + rename).

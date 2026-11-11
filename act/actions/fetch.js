@@ -1,6 +1,6 @@
 // fetch.js — v1.2.1 · read one web page from an allow-listed host · changelog: act/CHANGELOG.md#actactionsfetchjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // TENTACLE: read a web page from an allow-listed host (ACTBUS docs/capability-architecture.md §1 item 3)
 // Input { url: "https://host/path" }. Only http(s); the host must be in the targets that EVERY identity in the chain was
 // granted (intersection). Redirects are NOT followed (a redirect could leave the allow-list) — a 3xx is returned as is.

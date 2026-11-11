@@ -1,6 +1,6 @@
 // state.js — v1.1.1 · a script's remembered values, on disk · changelog: act/CHANGELOG.md#actproteusstatejs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // PROTEUS-K script state on disk (ACTBUS docs/proteus-k.md §6)
 // One folder per script identity: <stateRoot>/s-<identity>/state.json — visible only to that script (the engine opens the
 // folder of the identity the script runs AS). Each value is stored WITH its labels; "absent" holds the labels of every write

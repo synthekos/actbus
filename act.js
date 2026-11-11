@@ -1,6 +1,6 @@
 // act.js — v1.9.0 · the host adapter: the HTTP route, the identities' grants and `create()` · changelog: act/CHANGELOG.md#actjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // ## Design
 // (1) ACK, ACTBUS docs/functions-and-mailboxes.md §5 — when a KEY HOLDER calls `messages` itself WITH `hold: true` (review R1 L4: opted into), what it read is HELD
 //   (claimed) until it acknowledges the ids (input `ack`) or 10 min pass (then delivered again; dead after 3); scripts unchanged.

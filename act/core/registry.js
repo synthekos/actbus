@@ -1,6 +1,6 @@
 // registry.js — v1.2.4 · the action registry: every action is a file pinned by its sha256 · changelog: act/CHANGELOG.md#actcoreregistryjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // ## Design
 // the action registry: every action is a file pinned by its sha256 (ACTBUS docs/capability-architecture.md §1 item 3)
 // 1.2.0 (ACTBUS docs/proteus-k.md §7): kind "script" — a PROTEUS-K source file (.pk), pinned by its sha256 like any action, prepared by the

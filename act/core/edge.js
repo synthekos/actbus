@@ -1,6 +1,6 @@
 // edge.js — v1.0.2 · POST /api/act: where outside callers enter the bus · changelog: act/CHANGELOG.md#actcoreedgejs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // POST /api/act — where outside callers (EUsers, devices, apps) enter the bus
 //   POST /api/act   Authorization: Bearer <key>   { "action": "calc", "input": { "expr": "4837 * 2919" }, "labels": [], "id": "…" }
 // The key decides the identity (resolveKey: key → identity name, or null). The caller may ADD labels (e.g. declare that

@@ -1,6 +1,6 @@
 // capabilities.js — v1.1.0 · who may do what; authority shrinks along a chain · changelog: act/CHANGELOG.md#actcorecapabilitiesjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // who may do what, and authority that SHRINKS along a chain (ACTBUS docs/capability-architecture.md §1 item 1, §9 item 3)
 // 1.1.0 (ACTBUS docs/proteus-k.md §5): grant flag strictControl — this identity wants rule (a) for this action: a call made under a
 // model/web-labelled condition (ctl) is treated as tainted. If ANY identity in the chain sets it, the chain is strict.

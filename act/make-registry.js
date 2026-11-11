@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
-// make-registry.js — v1.1.0 · the administrator's approval step: pin action files by their sha256 · changelog: act/CHANGELOG.md#actmake-registryjs
-// (C) John Koperwas 2026 · Koperwas Systems
+// make-registry.js — v1.1.1 · the administrator's approval step: pin action files by their sha256 · changelog: act/CHANGELOG.md#actmake-registryjs
+// (C) John Koperwas 2026
 // the ADMIN's approval step: pin every action file by its sha256
 //   node make-registry.js <actions folder>        reads registry.spec.json there, writes registry.json next to it
 // The spec is registry.json without the sha256 fields. Running this IS the approval: from then on the loader refuses
@@ -34,6 +34,6 @@ if (fs.existsSync(tspec)) {
   for (const t of v.ok) if (!scripts.has(t.script)) v.refused.push({ id: t.id, reason: t.script + ' is not a registered script' });
   if (v.refused.length) { for (const r of v.refused) console.error('  ✗ trigger ' + r.id + ': ' + r.reason); console.error('  ✗ triggers.json NOT written (registry.json was)'); process.exit(1); }
   fs.writeFileSync(tout, JSON.stringify({ approved: out.approved, triggers: list }, null, 1) + '\n');
-  for (const t of list) console.log('  ✓ trigger ' + t.id.padEnd(16) + ' ' + t.script + ' as ' + t.runsAs + ' · ' + (t.every ? 'every ' + t.every + ' s' : 'at ' + t.at + ' ' + t.tz + (t.days ? ' ' + t.days : '')));
+  for (const t of list) console.log('  ✓ trigger ' + t.id.padEnd(16) + ' ' + t.script + ' as ' + t.runsAs + ' · ' + (t.on ? 'on message, topic ' + t.topic : t.every ? 'every ' + t.every + ' s' : 'at ' + t.at + ' ' + t.tz + (t.days ? ' ' + t.days : '')));   // 1.1.1: on-message
   console.log('  ✓ triggers.json written (' + list.length + ' triggers)');
 } else if (fs.existsSync(tout)) console.log('  · no triggers.spec.json — the existing triggers.json is left as it is (delete it to stop all triggers)');

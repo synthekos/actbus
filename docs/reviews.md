@@ -7,7 +7,7 @@ These were structured review rounds run by AI sessions reading the code cold: a 
 - Each section is one review, in date order (2026). Its heading says what the kernel's comments call it, so a citation in the code leads here.
 - **A tag belongs to its review.** `H1` in the mailbox review R2 and `H1` in the slice 3 review R-S3 are different findings; `R1` names both a finding of the 2 Nov invariant tests and the 5 Nov review of acknowledged reads. The index at the end resolves every bare tag in the kernel by file.
 - **"Round N" belongs to its release.** Each release reviewed from 6 Nov on had its own rounds.
-- **Tests.** A test under `act/test/` is in this repository. A *host test* is in the reference host's application tests (`test/act*.test.js` in SYNTHEKOS), which are not in this repository; SYNTHEKOS's release checks run them. **20 findings are pinned only by host tests:** the seven of 28 Oct's `act.js` 1.1.0; R2 H1 and M4; R3 H1-bis; both of R4; 5 Nov R1 M2, L3 and L4, N2, C1 and C2; F09; and `v0.53.2` round 1's SAVE and LOAD. Porting them is owed (README, Known gaps). Unless a test is marked *guard*, its file records that it fails on the code before the fix. That code is not in this repository, so this is a record to take on trust (README).
+- **Tests.** A test under `act/test/` is in this repository. A *host test* is in the reference host's application tests (`test/act*.test.js` in SYNTHEKOS), which are not in this repository; SYNTHEKOS's release checks run them. **20 findings (21 host tests) are pinned only by host tests:** the seven of 28 Oct's `act.js` 1.1.0; R2 H1 and M4; R3 H1-bis; both of R4; 5 Nov R1 M2, L3 and L4, N2, C1 and C2; F09; and `v0.53.2` round 1's SAVE/LOAD finding (two host tests, "SAVE" and "LOAD"). Porting them is owed (README, Known gaps). Unless a test is marked *guard*, its file records that it fails on the code before the fix. That code is not in this repository, so this is a record to take on trust (README).
 - **`act/CHANGELOG.md`** keeps the build history as it was written. Since `v0.53.7-cleanup` it names no reviewer, owner or build machine: the second reader appears as a second-reader review, a round as "round 1" or "review 1", and the owner as "the owner" (the note at its top says what was replaced). This page is the key to those entries. An "(owner decision, date)" in the code is a design choice the owner made on that date; it is not a review.
 
 ## 28 Oct: adversarial second-reader review of the capability core (1.0.0)
@@ -308,6 +308,34 @@ The whole `v0.3.1` tree went to another fresh Claude Code session, the same way 
   - **Fixed in a measured file, by a declared edit to one comment line:** 18 (`lab/mutations/RESULTS-0537-cleanup-words.md`, line 31) and 28 (`lab/EXPECTED-RESULTS.txt`, line 1). Their RESULT lines and table rows are unchanged.
   - **Fixed beside a file that cannot change:** 17 (a note in `lab/mutations/README.md`; the sealed list keeps its sha) and 21 (a README note on the date stamps; `act/CHANGELOG.md` is the kernel's).
   - **Still waiting:** `lab/mutations/mutrun.sh` still appends and still resolves a relative path against `lab/` (16; the README and `lab/mutations/README.md` say so), and `lab/lab.js`'s first lines (part of 19) wait for the next lab release, with the first cold read's 27: a change to a lab program moves its version, and the mutation table's first line names that version. The six `act.js` entries with no text (20) wait for a SYNTHEKOS release; Known gaps says so.
+
+## 10 Nov: v0.54.0, the trigger kill switch reads the scheduler's list (rounds 1–3)
+
+The third cold read's one behavioural finding (below): `act/trigger-off.js` 1.1.0 checked only that `<dir>/act-files/` existed, so a mistyped id got a ✓ and exit 0; the kernel then audited `trigger-off-unknown`, and the real trigger kept firing.
+- **Round 1:** the design approved. At every start the scheduler writes the ids of the triggers it loaded to its state (`loaded: { at, ids }`; a refused entry is not among them), and the script writes the off-file only for one of those ids: it reads kernel state instead of guessing. Every refusal is exit 2, and the message tells them apart. The ✓ line says what the kernel will do, in plain text. In the same release: the approval line of an on-message trigger (the third cold read's 3) and the comment on where the scheduler keeps its state (its 5).
+- **Round 2:** the host machine's numbers. Every check of the release passed there except one row of the kit's own claims table, which asked for a line no run prints. The row was fixed and the release files were unchanged. The claims template gained a rule: every proof that names a line of the host machine's check is shown matching a real one before a kit ships.
+- **Round 3:** the host machine's check of the fixed kit, then live.
+- Fixed in `act/trigger-off.js` 1.2.0, `act/scheduler.js` 1.3.0 and `act/make-registry.js` 1.1.1. Tests: `act/test/trigger-off.test.js` 1.1.0 (7 tests, every refusal on its own failure path), `act/test/scheduler.test.js` 1.1.0 ("FAIL-FIRST loaded ids (1.3.0): …") and `act/test/make-registry.test.js` 1.0.0, new ("FAIL-FIRST on-message trigger: …" and the *guard* "GUARD fail closed: …"). Six FAIL-FIRST tests fail on `v0.53.9`'s files: four in `act/test/trigger-off.test.js`, and one in each of the other two.
+
+## 10 Nov: v0.54.1, the copyright line (rounds 1–3)
+
+The third cold read's 13 (below): 36 kernel files carried a short copyright line that also named a company, beside the person that `LICENSE`, `NOTICE` and the SPDX lines name. In those lines the company name is removed: each names the author alone. No code changed and no file's version moved; every file's tokens are identical before and after. Ten of the files are action files, so `act/actions/registry.json` pins their new sha256 (11 entries: `file.js` serves two), and its approval time is kept.
+- **Round 1:** the scope approved: the 36 lines, the 11 pins and one note at the top of `act/CHANGELOG.md`. A comment change in a pinned file is a data change: the suite, run on a candidate with the new lines and the old pins, failed, because the loader refused the changed action files.
+- **Round 2:** the host machine's numbers, with the failure paths a release with no code change has: every token compared before and after, the release check failing on `v0.54.0`, and the loader refusing all 11 pinned entries under the old pins.
+- **Round 3:** the promote. On live, with the old pins the loader refuses all 11 entries; with the new pins it loads all 11.
+- No test changed: with no code change, no fail-first test can bite. The note at the top of `act/CHANGELOG.md` says what changed.
+
+## 10 Nov: the cold read of v0.3.2
+
+The whole `v0.3.2` tree went to a third fresh session, the same way and with the same brief as the first two. Its report is `docs/cold-read-v032.md`, word for word.
+
+- **It ran:** `npm test` (374 of 374); `npm run test:check` (pass); `lab/lab-check.sh` (12 of 12); `tools/name-hashes.js` (3 of 3); the example; the mutation harness, all 144 rows identical to `lab/mutations/RUNS-0538_091126.tsv`; the five suite generators, every scenario regenerated byte for byte; the fingerprint; and its own trials of what the docs describe: `create()`'s refusals, the fetch kill switch, the worked example for a script, the trigger examples and the trigger kill switch.
+- **It could not run:** the git checks (no clone), the byte-identity check (it needs the private SYNTHEKOS repository) and the real-model run (no model server).
+- **Its 15 findings, and how they are settled:**
+  - **The behavioural one, 1:** fixed in the kernel by SYNTHEKOS `v0.54.0` (above), which `v0.3.3` carries. In the same release: the on-message approval line (3) and the comment on the scheduler's state (5). SYNTHEKOS `v0.54.1` settled 13, the copyright line.
+  - **The worked example, 2:** `examples/script-host.js`, new, which the release check runs. `docs/proteus-k.md` §7 shows its output and says what a script's own identity is and must hold; `docs/host.md` says what a trigger's `runsAs` must hold.
+  - **Fixed in this repository's text and files:** 4 (the README's terms), 5 (`docs/host.md` names where "switched off" is kept, and that the off-files are consumed), 6 (what a long-running host adds), 7 (`.gitignore`), 8 (this page's count), 9 (the flow diagram's checks), 11, 12, 14 (the README says why no new mutation file was made) and 15 (the byte-identity check's first form names the repository it is for).
+  - **Settled beside a file that cannot change:** 10, `act.js`'s header (line 51). `docs/host.md` says which handler a host uses, and Known gaps lists that comment for the next SYNTHEKOS release.
 
 ## Index: every bare tag in the kernel, by file
 

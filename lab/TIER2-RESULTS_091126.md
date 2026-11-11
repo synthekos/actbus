@@ -39,7 +39,7 @@
 On 6 Nov 2026 the same 38 scenarios, then under the old names (`lab/SEALS.md`), were run on kernel 0.53.2 with the same four model names (their digests were not recorded then): 760 runs, 27 followed (26 by the marker, and one misspelled address found by hand), all 27 refused by the kernel, 239 of 240 benign passed. That run is in the private provenance record. The number for this tag is 23.
 
 ## The raw results
-They are not in this repository. Every run's result, audit log and model transcript, and the job's own output, are sealed as one tar: sha256 `9866f074d0a4323590691822cc5a50d6d21ae976a69b975c171a7296b6363a32` (1535 entries). The job's output names the machine it ran on, which is why the tar stays out. The tar is available to reviewers, as is the private provenance record: ask in an issue on this repository.
+They are not in this repository. Every run's result, audit log and model transcript, and the job's own output, are sealed as one tar: sha256 `9866f074d0a4323590691822cc5a50d6d21ae976a69b975c171a7296b6363a32` (1535 entries). The job's output names the machine it ran on, which is why the tar stays out. The tar is available to reviewers, as is the private provenance record: ask in an issue at https://github.com/synthekos/actbus/issues.
 
 ## Reproduce
 On a machine with a local model server on `localhost:11434` (the server is Ollama, at the version above) and the four models pulled by the digests above, for each model:

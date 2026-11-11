@@ -1,6 +1,6 @@
 // pkd.js — v1.0.1 · the script daemon: a separate process that holds only the interpreter · changelog: act/CHANGELOG.md#actdaemonpkdjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // the PROTEUS-K daemon (slice 3: ACTBUS docs/capability-architecture.md §7 item 3): a SEPARATE OS process that holds ONLY the interpreter.
 // It has no database, no files and no network code
 // of its own (Node 22's permission model does not deny the network itself): the supervisor starts it under Node's permission model (it may read

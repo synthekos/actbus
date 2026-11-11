@@ -1,6 +1,6 @@
 // p0.test.js — v1.0.0 · tests: identities fixed per dispatch; the audit line on disk before a run · changelog: act/CHANGELOG.md#acttestp0testjs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // F04 identities per dispatch · F05 audit durable before a run
 // F06 duplicate ids survive a restart. Each test FAILS on bus.js 1.4.3 (v0.53.0 WIP).
 //   node --test act/test/p0.test.js      (no dependencies)

@@ -1,6 +1,6 @@
 // file.js — v1.1.0 · append to, or read, a text file in the identity's own folder · changelog: act/CHANGELOG.md#actactionsfilejs
 // SPDX-License-Identifier: Apache-2.0
-// (C) John Koperwas 2026 · Koperwas Systems
+// (C) John Koperwas 2026
 // TENTACLE: append to / read a text file in the identity's OWN folder only (ACTBUS docs/capability-architecture.md §1 item 3)
 // 1.1.0 (adversarial review): (a) files are opened with O_NOFOLLOW and checked through the OPEN handle (regular file,
 // one link) — a dangling or swapped symlink can no longer redirect a write outside the folder, and there is no
