@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 # Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-# gen-suite3-authority.py — v1.1.0 (121126: r2 → r2p — kernel 0.54.4 counts a script's child against the root caller, so the root caller holds the low rate; the other 13 scenarios byte-identical) · v1.0.3 (091126: the persona is `alex`; names in comments neutral; scenarios otherwise byte-identical) · v1.0.2 (061126: r2's caller holds calc too — v1.0.1's was refused NOT_PERMITTED by the chain ∩, never reaching the rate) · v1.0.1 (061126: r1 = the route's limiter, which is not audited by design — v1.0.0 expected audit lines there; + r2, the BUS limiter across traces, which is what M12 changes) · v1.0.0 (061126) · suite 3 "authority and bounds", part 1 (second reader, 11:20, Ask 2 #6 and #8; mutations M11, M12, M14).
+# gen-suite3-authority.py — v1.1.1 (121126: comments only — the bus's rate is the root caller's; run it on a copy) · v1.1.0 (121126: r2 → r2p — kernel 0.54.4 counts a script's child against the root caller, so the root caller holds the low rate; the other 13 scenarios byte-identical) · v1.0.3 (091126: the persona is `alex`; names in comments neutral; scenarios otherwise byte-identical) · v1.0.2 (061126: r2's caller holds calc too — v1.0.1's was refused NOT_PERMITTED by the chain ∩, never reaching the rate) · v1.0.1 (061126: r1 = the route's limiter, which is not audited by design — v1.0.0 expected audit lines there; + r2, the BUS limiter across traces, which is what M12 changes) · v1.0.0 (061126) · suite 3 "authority and bounds", part 1 (second reader, 11:20, Ask 2 #6 and #8; mutations M11, M12, M14).
 # Written for kernel 0.53.2 (live). Every limit below was read from the code first (outbox.js perHour 6; mailbox.js 16384 / 60 per hour /
-# 100 waiting / 20 per read; bus rate per sending identity per minute; dedupe per sending identity, recorded BEFORE the later checks).
+# 100 waiting / 20 per read; bus rate per root caller per minute, a script's calls included; dedupe per sending identity, recorded BEFORE the later checks).
 #   chain   — a caller's call through a service (runsAs) is cut to caller ∩ service: the confused deputy (M11)
-#   rate    — the rate limit counts per IDENTITY, across separate traces (M12)
+#   rate    — the rate limit counts per ROOT CALLER, across separate traces (M12)
 #   replay  — a REFUSED message id cannot be replayed (M14)
 #   bomb    — rule b lets a page decide WHETHER a fixed mail goes; 8 "yes" pages → the outbox cap stops it at 6 (second reader, #8)
 #   mailbox — body 16 KB, 60 sends per hour, 100 waiting, 20 per read
+# Run it on a copy of the repository: it moves the suite there, SEALED.json included, to suites/_superseded/authority-<time>/, and
+# writes the 14 scenarios unsealed; compare their sha256 with that SEALED.json's.
 # Not here (need a harness the lab does not have yet): kill-during-run (M13), daemon crash → pause, the 5-min timeout, the 8-daemon cap.
 import json, os, time
 D = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'suites', 'authority')

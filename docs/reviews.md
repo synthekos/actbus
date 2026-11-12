@@ -390,7 +390,7 @@ The sixth cold read's 3, 6 and 7 (below), fixed in the kernel:
 - **3:** a native action's thrown error answers 422 `ACTION_ERROR`, whatever it carries.
 - **6:** an `id` is used as sent: `""`, `7`, `null` or `{}` is refused 400 `BAD_ENVELOPE` (`act/core/envelope.js` 1.2.1, `act.js` 1.9.3, `act/core/edge.js` 1.0.4).
 - `act/CHANGELOG.md` says what `v0.54.3` code this made unreachable, and was deleted.
-- Tests: `act/test/caller-pays.test.js` 1.0.0 is new; it, `dedupe-full.test.js` 1.1.0 and `transient.test.js` 1.3.0 hold 11 FAIL-FIRST tests that fail on `v0.54.3`'s files.
+- Tests: `act/test/caller-pays.test.js` 1.0.0 is new; it, `dedupe-full.test.js` 1.1.0 and `transient.test.js` 1.3.0 hold 11 FAIL-FIRST tests that fail on `v0.54.3`'s files: the five of `caller-pays.test.js`, the three of `dedupe-full.test.js` named "empty id" and "non-string id", and three of `transient.test.js`, the two named "native" and the one named "edge".
 
 ## 11 Nov: the cold read of v0.3.5
 
@@ -408,6 +408,24 @@ The `v0.3.5` tree went to a sixth fresh session, scoped to that release's change
   - **14:** the README names both measurements whose machine is not recorded.
   - **15:** the README no longer lists what `lab/lab-check.sh` prints.
   - **16:** the line on line numbers above, for this read and the fifth.
+
+## 12 Nov: the cold read of v0.3.6
+
+The `v0.3.6` tree went to a seventh fresh session, scoped to the dedupe and rate text of `docs/host.md`, the authority scenario `r2p` with the old `r2` it replaced, and every sentence that states one of the values that release changed. The report is `docs/cold-read-v036.md`; its line numbers are those of the `v0.3.6` tree.
+
+- **It ran:** `lab/lab-check.sh` (12 of 12), the authority suite and the old `r2` alone in both modes, the generator on a copy, the mutation harness (all 144 rows identical), three of the kernel's test files (32 of 32), and four trials of its own: a caller at the cap over HTTP, the rate through a script and a trigger, the id lengths, and the memory.
+- **It found no behavioural fault.** Its 14 findings, and how they are settled in `v0.3.7`:
+  - **1:** the retry times of a refused trigger were false. The reader drove the scheduler with a clock it moved itself and saw 15 s and then 30 s. Run on the kernel's own 15 s timer and the real clock, the first retry comes about 15 s after the refusal, and the second about 30 s or about 45 s after the first, by a race of milliseconds, on SYNTHEKOS's host machine and on a Linux machine. `docs/host.md` ("Triggers") now says what the code schedules and when the retries land, and the README's Known gaps name it as a fault for the next kernel release, with `tools/tick-probe.js`.
+  - **2:** the same sentence says the scheduler does not read `retryAfterMs`, so a trigger whose identity is full loses every fire until a slot frees.
+  - **3 and 4:** the `rate` row says what the caller gets when a script's call is refused `RATE`, and that `route` and the bus each count against the rate.
+  - **5:** one rule after any 503: wait `Retry-After`, then retry with a new id.
+  - **6:** the dedupe check says it keeps the id of every fire of a time trigger too.
+  - **7 and 8:** the two memory methods are `tools/measure-memory-heap.js` and `tools/measure-memory-bus.js`, named in `docs/host.md`; the gap between them is still not explained.
+  - **9:** the id line names an emoji of each length.
+  - **10:** not settled here: whether an on-message trigger's root is its `runsAs` identity is left for an issue.
+  - **11 and 12:** `lab/gen-suite3-authority.py` 1.1.1: its comments say the bus's rate is the root caller's, and that it must be run on a copy.
+  - **13:** `lab/SEALS.md` gives the kept `r2`'s seal, the command that runs it and its line, and where the old seal is.
+  - **14:** the line above this section names the 11 tests.
 
 ## Index: every bare tag in the kernel, by file
 
