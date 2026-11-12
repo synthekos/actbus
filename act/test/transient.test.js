@@ -1,8 +1,10 @@
-// transient.test.js — v1.2.2 · tests: transient refusals, through every site they pass · changelog: act/CHANGELOG.md#acttesttransienttestjs
+// transient.test.js — v1.3.0 · tests: transient refusals, through every site they pass · changelog: act/CHANGELOG.md#acttesttransienttestjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // One rule, the sites it passes through: supervisor (sets it) → engine (keeps it) → bus (code + transient: true, reply AND audit) →
 // edge (503) → scheduler (a time trigger retries once, then `lost`) · and the mailbox, which needs no change (a refused run claimed
 // nothing — proved below). Tests marked FAIL-FIRST fail on 0.53.3; tests marked GUARD hold on both (they pin what must not change).
+// 1.3.0 (v0.54.4, the sixth cold read's #3): a NATIVE action's thrown error is never transient — the two tests marked FAIL-FIRST
+// native fail on 0.54.3 (bus.js 1.6.0); the same file shows a script's refusal still is.
 // Run: node --test test/transient.test.js
 'use strict';
 const test = require('node:test');
@@ -21,18 +23,22 @@ const { Mailbox } = require(path.join(ROOT, 'mailbox'));
 const SPEC = JSON.parse(fs.readFileSync(path.join(ROOT, 'actions/registry.spec.json'), 'utf8')).actions.filter((e) => e.kind !== 'script');
 const tmp = (t) => fs.mkdtempSync(path.join(os.tmpdir(), 'tr-' + t + '-'));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const CODES = ['DAEMON_FULL', 'DAEMON_EVICTING', 'DAEMON_OVERLAP', 'DAEMON_PAUSED', 'DAEMON_RESTARTING', 'DEDUPE_FULL'];   // 1.2.2 (v0.54.3): + DEDUPE_FULL
+const CODES = ['DAEMON_FULL', 'DAEMON_EVICTING', 'DAEMON_OVERLAP', 'DAEMON_PAUSED', 'DAEMON_RESTARTING'];   // 1.3.0: DEDUPE_FULL is not thrown (bus 1.7.0)
 const LONG = '(for-each (a (input xs)) (for-each (b (input xs)) (for-each (c (input xs)) (+ (number a) (number b) (number c)))))';
 const XS = Array.from({ length: 100 }, (_, i) => String(i));
 
 // the same small world as daemon.test.js: scripts as identities that hold themselves, alex may call each
-function world(scripts, { daemon = {}, fuel } = {}) {
+function world(scripts, { daemon = {}, fuel, natives = [] } = {}) {
   const dir = tmp('act'), box = tmp('box');
   for (const f of fs.readdirSync(path.join(ROOT, 'actions'))) if (f.endsWith('.js')) fs.copyFileSync(path.join(ROOT, 'actions', f), path.join(dir, f));
   const spec = [...SPEC];
   for (const [name, src] of scripts) {
     fs.writeFileSync(path.join(dir, name + '.pk'), src);
     spec.push({ name, version: '1.0.0', kind: 'script', file: name + '.pk', produces: 'computed', world: false, runsAs: name, needs: [], input: { xs: 'array?' }, acceptWarnings: true });
+  }
+  for (const [name, src] of natives) {   // 1.3.0: a native action, run in-process
+    fs.writeFileSync(path.join(dir, name + '.js'), src);
+    spec.push({ name, version: '1.0.0', kind: 'native', file: name + '.js', produces: 'computed', world: false, needs: ['fs', 'path'], input: {}, timeoutMs: 60000 });
   }
   const actions = spec.map((e) => ({ ...e, sha256: registry.sha256(fs.readFileSync(path.join(dir, e.file))) }));
   fs.writeFileSync(path.join(dir, 'registry.json'), JSON.stringify({ actions }));
@@ -41,7 +47,7 @@ function world(scripts, { daemon = {}, fuel } = {}) {
   const engine = createEngine({ stateRoot: box, audit: (r) => audit.push(r), daemon: sup, fuel });
   const loaded = registry.load(dir, 'registry.json', { scriptEngine: engine });
   if (loaded.refused.length) throw new Error('refused: ' + JSON.stringify(loaded.refused));
-  const ids = caps.fromList([{ name: 'alex', kind: 'person', owner: 'alex', actions: { calc: {}, ...Object.fromEntries(scripts.map(([n]) => [n, {}])) } },
+  const ids = caps.fromList([{ name: 'alex', kind: 'person', owner: 'alex', actions: { calc: {}, ...Object.fromEntries([...scripts, ...natives].map(([n]) => [n, {}])) } },
     ...scripts.map(([name]) => ({ name, kind: 'script', owner: 'alex', actions: { calc: {}, [name]: {} } }))]);
   const bus = new Bus({ registry: loaded.actions, identities: ids, names: new Names('local'), fetch: async () => ({ status: 404, text: async () => '' }), filesRoot: box, audit: (l) => audit.push(JSON.parse(l)) });
   return { bus, audit, engine, sup };
@@ -103,12 +109,52 @@ test('GUARD bus: a daemon cannot make its own failure transient — whatever it 
   } finally { w.engine.close(); }
 });
 
-test('FAIL-FIRST edge: a transient refusal answers HTTP 503; the bus and the supervisor name the same six codes', () => {
+test('FAIL-FIRST edge: a transient refusal answers HTTP 503; the bus and the supervisor name the same five codes', () => {
   for (const c of CODES) { assert.equal(ERR[c], c, 'the bus knows ' + c); assert.equal(STATUS[c], 503, c + ' → 503'); }
   const { TRANSIENT } = require(path.join(ROOT, 'daemon/supervisor'));
   const { TRANSIENT_CODES } = require(path.join(ROOT, 'core/bus'));
   assert.deepEqual([...TRANSIENT].sort(), [...CODES].sort());
   assert.deepEqual([...TRANSIENT_CODES].sort(), [...CODES].sort(), 'a code added in one place must be added in the other');
+});
+
+// ---------- a native action (1.3.0, the sixth cold read's #3) ----------
+// A native that did work and then throws: whatever its error carries, the run was attempted, so it is ACTION_ERROR (422), never transient.
+// The case that would break it: the bus's one-line gate (`entry.kind === 'script'` in bus.js's catch) removed — the kit runs that mutation.
+const MARK = (name) => "exports.run = async (input, ctx) => { require('fs').writeFileSync(require('path').join(ctx.filesRoot, '" + name + "'), 'yes');";
+test('FAIL-FIRST native: a native action that wrote a file, then throws an error marked transient with a transient code, is ACTION_ERROR — not transient, no retryAfterMs', async () => {
+  for (const code of [...CODES, 'DEDUPE_FULL']) {
+    const w = world([], { natives: [['forge', MARK('did-work') + " throw Object.assign(new Error(" + JSON.stringify(code + ': forged') + "), { code: " + JSON.stringify(code) + ", transient: true, retryAfterMs: 1000 }); };"]] });
+    try {
+      const r = await w.bus.ask('alex', 'forge', {}, {});
+      assert.equal(r.code, 'ACTION_ERROR', code + ': ' + JSON.stringify(r));
+      assert.notEqual(r.transient, true, code + ': a native that ran is never transient');
+      assert.equal(r.retryAfterMs, undefined, code);
+      assert.equal(STATUS[r.code], 422);
+      assert.ok(fs.existsSync(path.join(w.bus.filesRoot, 'did-work')), code + ': the work was done');
+      const line = w.audit.find((x) => x.outcome === 'error' && x.action === 'forge');
+      assert.ok(line && line.code === 'ACTION_ERROR' && line.transient !== true, code + ': audited as ACTION_ERROR: ' + JSON.stringify(line));
+    } finally { w.engine.close(); }
+  }
+});
+
+test('FAIL-FIRST native: a native that rethrows a child refused by a busy daemon is ACTION_ERROR, while the same refusal of the script itself is DAEMON_FULL, transient', async () => {
+  const relay = MARK('relay-did-work') + " const r = await ctx.send('p2', {}); if (!r.ok) throw Object.assign(new Error(r.error), r); return r.value; };";
+  const w = world([['p1', LONG], ['p2', '(get (calc :expr "1+1") "result")']], { fuel: 100000000, daemon: { max: 1, crashLimit: 99 }, natives: [['relay', relay]] });
+  try {
+    const long = w.bus.ask('alex', 'p1', { xs: XS }, {});
+    await sleep(300);
+    const script = await w.bus.ask('alex', 'p2', {}, {});   // the script itself: never started — the engine's refusal is believed
+    assert.equal(script.code, 'DAEMON_FULL', JSON.stringify(script));
+    assert.equal(script.transient, true, 'a script refused by the supervisor is transient');
+    const native = await w.bus.ask('alex', 'relay', {}, {});   // a native that ran, then met that refusal from its child
+    assert.equal(native.code, 'ACTION_ERROR', JSON.stringify(native));
+    assert.notEqual(native.transient, true, 'a native that ran is never transient, whatever it rethrows');
+    assert.match(native.error, /script daemons are busy/, 'the message is the refusal it rethrew');
+    assert.ok(fs.existsSync(path.join(w.bus.filesRoot, 'relay-did-work')), 'the native did its work first');
+    const child = w.audit.find((x) => x.outcome === 'error' && x.action === 'p2' && x.hops !== undefined && x.trace === native.trace);
+    assert.ok(child && child.code === 'DAEMON_FULL' && child.transient === true, 'its child was refused DAEMON_FULL, transient: ' + JSON.stringify(child));
+    w.engine.close(); await long;
+  } finally { w.engine.close(); }
 });
 
 // ---------- scheduler ----------

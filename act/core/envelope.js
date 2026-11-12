@@ -1,4 +1,4 @@
-// envelope.js — v1.2.0 · the one message format, and the labels it carries · changelog: act/CHANGELOG.md#actcoreenvelopejs
+// envelope.js — v1.2.1 · the one message format, and the labels it carries · changelog: act/CHANGELOG.md#actcoreenvelopejs
 // SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // the one message format for everything (ACTBUS docs/capability-architecture.md §1 item 2)
@@ -49,7 +49,7 @@ const warnOnly = (ls) => [...ls].filter((l) => !CREDENTIALS.includes(l));
 // A root message enters at the edge. Labels the caller declares can only ADD to the label its identity kind earns — and only warnings.
 function root({ from, action, input = {}, labels = [], kindLabel, to = 'local', hops = DEFAULT_HOPS, id, trace, time }) {
   const all = [...new Set([kindLabel, ...warnOnly(labels)].filter(Boolean))];
-  const mid = id || newId();
+  const mid = id === undefined ? newId() : id;   // 1.2.1 (v0.54.4, the sixth cold read's #6): only a missing id is made here; "" is checked, and refused
   return check({ id: mid, from, to, action, input, replyTo: null, time, trace: trace || mid, hops, labels: all, ctl: [], authority: [from] });
 }
 

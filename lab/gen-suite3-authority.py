@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-# gen-suite3-authority.py — v1.0.3 (091126: the persona is `alex`; names in comments neutral; scenarios otherwise byte-identical) · v1.0.2 (061126: r2's caller holds calc too — v1.0.1's was refused NOT_PERMITTED by the chain ∩, never reaching the rate) · v1.0.1 (061126: r1 = the route's limiter, which is not audited by design — v1.0.0 expected audit lines there; + r2, the BUS limiter across traces, which is what M12 changes) · v1.0.0 (061126) · suite 3 "authority and bounds", part 1 (second reader, 11:20, Ask 2 #6 and #8; mutations M11, M12, M14).
+# gen-suite3-authority.py — v1.1.0 (121126: r2 → r2p — kernel 0.54.4 counts a script's child against the root caller, so the root caller holds the low rate; the other 13 scenarios byte-identical) · v1.0.3 (091126: the persona is `alex`; names in comments neutral; scenarios otherwise byte-identical) · v1.0.2 (061126: r2's caller holds calc too — v1.0.1's was refused NOT_PERMITTED by the chain ∩, never reaching the rate) · v1.0.1 (061126: r1 = the route's limiter, which is not audited by design — v1.0.0 expected audit lines there; + r2, the BUS limiter across traces, which is what M12 changes) · v1.0.0 (061126) · suite 3 "authority and bounds", part 1 (second reader, 11:20, Ask 2 #6 and #8; mutations M11, M12, M14).
 # Written for kernel 0.53.2 (live). Every limit below was read from the code first (outbox.js perHour 6; mailbox.js 16384 / 60 per hour /
 # 100 waiting / 20 per read; bus rate per sending identity per minute; dedupe per sending identity, recorded BEFORE the later checks).
 #   chain   — a caller's call through a service (runsAs) is cut to caller ∩ service: the confused deputy (M11)
@@ -41,14 +41,14 @@ CALC = {"as": "r", "action": "calc", "input": {"expr": "1+1"}}
 save({"id": "r1-route-rate", "twin": "hostile", "about": "an EUser at rate 3: 5 calls — the 4th and 5th are refused RATE at the route (not audited, by design)",
       "identities": [{"login": "r", "grants": {"actions": {"calc": {}}, "rate": 3}}], "scripts": [], "steps": [CALC] * 5,
       "expect": [{"step": 2, "ok": True}, {"step": 3, "ok": False, "code": "RATE"}, {"step": 4, "ok": False, "code": "RATE"}, {"audit": {"action": "calc", "outcome": "ok"}, "count": 3}]})
-# r2 — the BUS's limiter (per SENDING identity, across traces; M12): a service at rate 3 makes 2 calls per run; two runs = two traces
+# r2p — the BUS's limiter (per ROOT caller, across traces; M12): the root caller at rate 4 runs a service script of 2 calls twice; two runs = two traces
 TWO = '(do (calc :expr "1+1") (calc :expr "2+2"))'
-def r2(id_, twin, about, rate, expect):
+def r2(id_, twin, about, boss, svc, expect):
     save({"id": id_, "twin": twin, "about": about,
-          "identities": [{"login": "boss", "grants": {"actions": {"go": {}, "calc": {}}, "rate": 120}}, {"login": "svc", "grants": {"actions": {"go": {}, "calc": {}}, "rate": rate}}],   # boss holds calc too: the chain is boss ∩ svc
+          "identities": [{"login": "boss", "grants": {"actions": {"go": {}, "calc": {}}, "rate": boss}}, {"login": "svc", "grants": {"actions": {"go": {}, "calc": {}}, "rate": svc}}],   # boss holds calc too: the chain is boss ∩ svc
           "scripts": [{"name": "go", "runsAs": "svc", "source": TWO, "world": False}], "steps": [{"as": "boss", "action": "go"}] * 2, "expect": expect})
-r2("r2-bus-rate-across-traces", "hostile", "a service at rate 3 called twice (2 traces × 2 calls): its 4th message is refused RATE by the BUS, audited",
-   3, [{"step": 0, "ok": True}, {"step": 1, "ok": False}, {"audit": {"action": "calc", "outcome": "refused", "code": "RATE"}, "count": 1}])
+r2("r2p-root-pays-across-traces", "hostile", "the root caller at rate 4 runs a service script twice (2 traces x 3 messages): its 5th message, a child, is refused RATE by the BUS, audited",
+   4, 120, [{"step": 0, "ok": True}, {"step": 1, "ok": False}, {"audit": {"action": "calc", "outcome": "refused", "code": "RATE"}, "count": 1}])
 save({"id": "r1-twin", "twin": "benign", "about": "rate 10: the same 5 calls all go through",
       "identities": [{"login": "r", "grants": {"actions": {"calc": {}}, "rate": 10}}], "scripts": [], "steps": [CALC] * 5,
       "expect": [{"step": 4, "ok": True}, {"audit": {"outcome": "refused"}, "count": 0}]})

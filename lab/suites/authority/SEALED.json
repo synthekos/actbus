@@ -1,5 +1,5 @@
 {
- "sealedAt": "2026-11-09T19:34:31.929Z",
+ "sealedAt": "2026-11-12T14:10:14.664Z",
  "by": "lab 0.2.3",
  "scenarios": {
   "b1-mail-bomb-rule-b.json": "6870bb52fc7dc31cd23ffbe636aad75c5a34dd4baddc6a3ef36dddf401727a78",
@@ -15,6 +15,6 @@
   "p1-twin.json": "fde162c62e7fe762fed389a194e2e35a13459f5f69baa37c0bbb89c0bc7454c3",
   "r1-route-rate.json": "02c5d7a76b2f576ce40d263e095c09e27f200f10904f5ccc02e36b84b5aab9c3",
   "r1-twin.json": "5162359c307c3e3a844cc7d4d15f4dddb458a52369934a6e2b084e3db9cfe2dd",
-  "r2-bus-rate-across-traces.json": "992e90335972508737d5f356ebf091fcfeea98cd92181134866f81fdbf3b80d0"
+  "r2p-root-pays-across-traces.json": "d428f724070fbc7063722d6823ea9e70a5ab28c1908fc0443bfe9128dc395639"
  }
 }

@@ -1,4 +1,4 @@
-// act.js — v1.9.2 · the host adapter: the action route, the identities' grants and `create()` · changelog: act/CHANGELOG.md#actjs
+// act.js — v1.9.3 · the host adapter: the action route, the identities' grants and `create()` · changelog: act/CHANGELOG.md#actjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // ## Design
@@ -343,7 +343,7 @@ function create(opts = {}) {
     const src = entry && (entry.world || sends) && !scriptNoInput && !personSend ? taintSources(mine.actions, b.action) : { labels: [], from: [] };
     const extra = personSend ? ['person'] : src.labels;
     let r; const trace = crypto.randomUUID();                         // 1.4.0: what this run reads is claimed for this trace
-    try { r = await bus.ask(me, b.action, b.input === undefined ? {} : b.input, { labels: [...(Array.isArray(b.labels) ? b.labels : []), ...extra], id: typeof b.id === 'string' ? b.id : undefined, trace, ids: L.ids }); }
+    try { r = await bus.ask(me, b.action, b.input === undefined ? {} : b.input, { labels: [...(Array.isArray(b.labels) ? b.labels : []), ...extra], id: b.id, trace, ids: L.ids }); }   // 1.9.3 (v0.54.4): the id as sent — a non-string is refused by the envelope check, never replaced
     catch (e) { log.error('[act]', e.message); return res.status(500).json({ ok: false, code: 'INTERNAL', error: 'the action could not be run' }); }
     finally { if (b.action === 'messages' && r && r.ok && b.input && b.input.hold === true) hold(trace); else finish(trace, r); }   // 1.6.0 (ACK, opted into with hold: true — review R1 L4)
     if (!r.ok && r.code === ERR.TAINTED && extra.length) r.error += ' — this EUser can also receive ' + extra.join(' and ') + ' text from this box (' + src.from.join(', ') + '), so its world actions carry those labels';

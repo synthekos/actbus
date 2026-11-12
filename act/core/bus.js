@@ -1,4 +1,4 @@
-// bus.js — v1.6.0 · the message bus: every check in order, then the audit line, then the action · changelog: act/CHANGELOG.md#actcorebusjs
+// bus.js — v1.7.0 · the message bus: every check in order, then the audit line, then the action · changelog: act/CHANGELOG.md#actcorebusjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // ## Design
@@ -16,7 +16,7 @@
 // The envelope still adds the script's own input labels to every child — a script cannot drop what it was called with.
 // Every message passes the same checks, in this order, and every outcome is written to the append-only audit log:
 //   1 envelope well-formed      2 not a duplicate (id seen before)    3 trace budget (one event cannot fan out forever)
-//   4 every identity in the authority chain exists                   5 rate (messages per minute, per sending identity)
+//   4 every identity in the authority chain exists                   5 rate (messages per minute, per root caller)
 //   6 the action has a route (name service; slice 1 = local only)    7 EVERY identity in the chain holds the action
 //   8 typed input               9 taint: model/web-labelled input never reaches a world action without an explicit rule
 //   — then "run" is logged (fail closed: no log line, no run), the action runs with a timeout, and "ok"/"error" is logged.
@@ -38,7 +38,7 @@ const caps = require('./capabilities');
 const targets = require('./targets');   // 1.4.5
 const { checkInput } = require('./registry');
 
-const TRANSIENT_CODES = new Set(['DAEMON_FULL', 'DAEMON_EVICTING', 'DAEMON_OVERLAP', 'DAEMON_PAUSED', 'DAEMON_RESTARTING', 'DEDUPE_FULL']);   // 1.4.6 (= supervisor TRANSIENT) · 1.6.0: DEDUPE_FULL
+const TRANSIENT_CODES = new Set(['DAEMON_FULL', 'DAEMON_EVICTING', 'DAEMON_OVERLAP', 'DAEMON_PAUSED', 'DAEMON_RESTARTING']);   // 1.4.6 (= supervisor TRANSIENT) · 1.7.0: DEDUPE_FULL is not here: only a root is refused it, by refuse(), and nothing thrown carries it
 const ERR = Object.freeze({
   BAD_ENVELOPE: 'BAD_ENVELOPE', DUPLICATE: 'DUPLICATE', BUDGET: 'BUDGET', UNKNOWN_IDENTITY: 'UNKNOWN_IDENTITY', RATE: 'RATE',
   UNKNOWN_ACTION: 'UNKNOWN_ACTION', NO_ROUTE: 'NO_ROUTE', NOT_PERMITTED: 'NOT_PERMITTED', BAD_INPUT: 'BAD_INPUT',
@@ -132,26 +132,34 @@ class Bus {
     // credential was built by hand — whatever its replyTo — and is refused
     if (!MINTED.has(env) && env.labels.some((l) => env_.CREDENTIALS.includes(l))) return this.refuse(env, ERR.BAD_ENVELOPE, 'a message the bus did not make may not carry the credential ' + env.labels.filter((l) => env_.CREDENTIALS.includes(l)).join('+'));
     // Duplicates are per SENDING identity and by time (fix 1.1.0): one identity's ids can neither block nor flush another's.
-    // Guarantee (1.6.0): an id is remembered for dedupeMs (default 24 h). Nothing is ever dropped by count: an identity that holds
+    // Guarantee (1.6.0): a root message's id is remembered for dedupeMs (default 24 h); a child the bus made is not (1.7.0). Nothing is ever dropped by count: an identity that holds
     // dedupeCap ids (default 50 000) inside the window is refused DEDUPE_FULL (transient) until its oldest leaves it. 1.5.0 dropped the oldest.
     const now = this.clock();
-    let mine = this.seen.get(env.from); if (!mine) { mine = new Map(); this.seen.set(env.from, mine); }
+    // 1.7.0 (v0.54.4, the sixth cold read's #7): a child the bus made (ctx.send) has a fresh random id (envelope.child) that nobody can
+    // send again, so it is not remembered and fills no identity's set: one caller cannot fill a shared script's identity for the others.
+    // `mine` is a throwaway map for it, so the checks below read the same for every message
+    const kept = !MINTED.has(env);
+    let mine = kept ? this.seen.get(env.from) : new Map(); if (!mine) { mine = new Map(); this.seen.set(env.from, mine); }
     const prev = mine.get(env.id);
     if (prev !== undefined && now - prev < this.dedupeMs) return this.refuse(env, ERR.DUPLICATE, 'message ' + env.id + ' was already received from ' + env.from);
     while (mine.size && now - mine.values().next().value >= this.dedupeMs) mine.delete(mine.keys().next().value);   // only by age
     mine.delete(env.id);
-    const full = this.dedupeFull(env.from, now);
+    const full = kept ? this.dedupeFull(env.from, now) : null;
     if (full) return this.refuse(env, ERR.DEDUPE_FULL, env.from + ' has ' + full.n + ' ids inside the ' + full.h + ' h window — none can be forgotten yet; try again later', { transient: true, retryAfterMs: full.retryAfterMs });
     mine.set(env.id, now);
-    try { this.persistSeen(env.from, env.id, now); }   // 1.4.4 (F06): fail closed — an id that cannot be remembered is not run
+    try { if (kept) this.persistSeen(env.from, env.id, now); }   // 1.4.4 (F06): fail closed — an id that cannot be remembered is not run
     catch (e) { mine.delete(env.id); return this.refuse(env, ERR.AUDIT, 'the duplicate-id record is unwritable — nothing was run (' + e.message + ')'); }
     const n = (this.traces.get(env.trace) || 0) + 1; this.remember(this.traces, env.trace, n);
     if (n > this.traceBudget) return this.refuse(env, ERR.BUDGET, 'trace ' + env.trace + ' exceeded its budget of ' + this.traceBudget + ' messages');
     const unknown = env.authority.filter((a) => !ids.has(a));
     if (unknown.length) return this.refuse(env, ERR.UNKNOWN_IDENTITY, 'unknown identity in the chain: ' + unknown.join(', '));
-    const t = this.clock(), win = (this.rates.get(env.from) || []).filter((x) => t - x < 60000);
-    if (win.length >= ids.get(env.from).rate) return this.refuse(env, ERR.RATE, env.from + ' exceeded ' + ids.get(env.from).rate + ' messages per minute');
-    win.push(t); this.rates.set(env.from, win);
+    // 1.7.0 (v0.54.4): the caller who caused the work pays for it — a child the bus made counts against the ROOT caller's rate
+    // (authority[0]), not the identity it is sent as, so a script identity has no rate of its own for its callers to share. A time
+    // trigger's root is its runsAs identity, so a trigger's calls count against that identity: the trigger pays for its own work
+    const payer = kept ? env.from : env.authority[0];
+    const t = this.clock(), win = (this.rates.get(payer) || []).filter((x) => t - x < 60000);
+    if (win.length >= ids.get(payer).rate) return this.refuse(env, ERR.RATE, payer + ' exceeded ' + ids.get(payer).rate + ' messages per minute' + (kept ? '' : ' (a call made for it by ' + env.from + ')'));
+    win.push(t); this.rates.set(payer, win);
 
     const route = this.names.resolve('action', env.action);
     if (!route) return this.refuse(env, ERR.UNKNOWN_ACTION, 'no action named ' + env.action);
@@ -231,10 +239,6 @@ class Bus {
       },
     });
 
-    // 1.6.0 (v0.54.3): a script whose own identity is at the cap would be refused at its first child call — it is refused
-    // HERE, before anything runs, so a 503 means what it says: the script did not start
-    if (entry.kind === 'script') { const full = this.dedupeFull(actAs, this.clock());
-      if (full) return this.refuse(env, ERR.DEDUPE_FULL, actAs + ', the identity the script ' + env.action + ' runs as, has ' + full.n + ' ids inside the ' + full.h + ' h window — the script was not started; try again later', { transient: true, retryAfterMs: full.retryAfterMs }); }
     const base = { id: env.id, trace: env.trace, replyTo: env.replyTo, from: env.from, authority, action: env.action, version: entry.version, sha256: entry.sha256.slice(0, 12), hops: env.hops, labels: env.labels, ...(env.ctl && env.ctl.length ? { ctl: env.ctl } : {}) };
     try { this.audit({ ...base, outcome: 'run', input: JSON.stringify(env.action === 'email' ? mailInput(env.input) : env.action === 'send' ? sendInput(env.input) : env.input).slice(0, 300) }); }
     catch (e) { return { ok: false, id: env.id, trace: env.trace, action: env.action, code: ERR.AUDIT, error: 'audit log unwritable — nothing was run (' + e.message + ')' }; }
@@ -258,14 +262,15 @@ class Bus {
       return { ok: true, id: env.id, trace: env.trace, action: env.action, basis: entry.produces, labels, value: out, sha256: entry.sha256.slice(0, 12) };
     } catch (e) {
       clearTimeout(timer);
-      const transient = !!(e && e.transient === true && TRANSIENT_CODES.has(e.code));   // 1.4.6: the run was never attempted
+      const transient = !!(entry.kind === 'script' && e && e.transient === true && TRANSIENT_CODES.has(e.code));   // 1.4.6: the run was never attempted
+      // 1.7.0 (v0.54.4, the sixth cold read's #3): believed only from the script engine, which sets it for the supervisor's own refusals
+      // (engine 1.4.1). A native action ran, so its thrown error is never transient, whatever it carries
       const code = e.code === ERR.TIMEOUT ? ERR.TIMEOUT : transient ? e.code : ERR.ACTION_ERROR;
       const msg = String(e && e.message || e).slice(0, 300);
       // an error message may carry text the action received, so it carries the labels too (fix 1.1.0)
       const labels = [...received, entry.produces].filter((l, i, a) => a.indexOf(l) === i && !isCred(l));   // F-B 1.3.0: an error is no credential
-      const after = transient && Number.isFinite(e.retryAfterMs) ? { retryAfterMs: e.retryAfterMs } : {};   // 1.6.0: a script's child refused DEDUPE_FULL
-      try { this.audit({ ...base, outcome: 'error', code, ...(transient ? { transient: true } : {}), ...after, reason: msg, labelsOut: labels, ms: this.clock() - t0 }); } catch { /* reported below */ }
-      return { ok: false, id: env.id, trace: env.trace, action: env.action, code, ...(transient ? { transient: true } : {}), ...after, error: msg, labels };
+      try { this.audit({ ...base, outcome: 'error', code, ...(transient ? { transient: true } : {}), reason: msg, labelsOut: labels, ms: this.clock() - t0 }); } catch { /* reported below */ }
+      return { ok: false, id: env.id, trace: env.trace, action: env.action, code, ...(transient ? { transient: true } : {}), error: msg, labels };
     }
   }
 }

@@ -368,11 +368,11 @@ The four cold reads before it, of `v0.3.0` to `v0.3.3`, missed it, and so did ev
 - **Round 1:** the design approved: at the cap a new id is refused `DEDUPE_FULL`, transient, with the true `Retry-After`; nothing is ever dropped by count, on either path.
 - **Round 2:** a transient refusal must keep meaning that nothing happened. A script whose identity is at the cap is refused before it starts. A script refused at its first action call answers `DEDUPE_FULL`, transient; one refused at a later call answers 422 `ACTION_ERROR` naming `DEDUPE_FULL`, because what it did stands. `retryAfterMs` is in the reply's body as well as in the header.
 - **Round 3:** the host machine's check of the release kit, and the promote.
-- Tests: `act/test/dedupe-full.test.js` 1.0.0 has 11 FAIL-FIRST tests, which fail on `v0.54.2`'s files, and 2 *guards*; `act/test/transient.test.js` 1.2.2 names the sixth transient code. Three ways of breaking the fix are caught only by SYNTHEKOS's release check (README, Known gaps).
+- Tests: `act/test/dedupe-full.test.js` 1.0.0 has 11 FAIL-FIRST tests, which fail on `v0.54.2`'s files, and 2 *guards*; `act/test/transient.test.js` 1.2.2 names the sixth transient code. Three ways of breaking the fix were caught only by SYNTHEKOS's release check; on `v0.54.4` the suite catches them, or the code is gone ("11 Nov: the cold read of v0.3.5", 11 and 12).
 
 ## 11 Nov: the cold read of v0.3.4
 
-The whole `v0.3.4` tree went to a fifth fresh session, the same way and with the same brief as the first four. Its report is `docs/cold-read-v034.md`, word for word.
+The whole `v0.3.4` tree went to a fifth fresh session, the same way and with the same brief as the first four. Its report is `docs/cold-read-v034.md`, word for word; its line numbers are those of the `v0.3.4` tree.
 
 - **It ran:** `npm test` (391 of 391); `npm run test:check` (pass); `lab/lab-check.sh` (12 of 12); `tools/name-hashes.js` (3 of 3); the three examples; the mutation harness, all 144 rows identical; the fingerprint; every PROTEUS-K example of `docs/functions-and-mailboxes.md` §2 through `tools/pk-run.js`; the trigger example with its kill switch; and its own trials of `create()`, `route`, `saveGrants`, the fetch kill switch and `email`.
 - **It could not run:** the git checks (no clone), the byte-identity check (it needs the private SYNTHEKOS repository), the real-model run (no model server), Node 22 and real mail delivery.
@@ -383,12 +383,39 @@ The whole `v0.3.4` tree went to a fifth fresh session, the same way and with the
   - **13:** the README says what `lab/lab-check.sh` prints.
 - **The other ten are open:** 2, 3, 5, 6, 7, 8, 10, 11, 12 and 14. Each is opened as an issue on this repository the day it is made public, citing this read.
 
+## 11 Nov: v0.54.4, the caller pays (rounds 1–3)
+
+The sixth cold read's 3, 6 and 7 (below), fixed in the kernel:
+- **7:** a call that an action makes through `ctx.send` is not kept by the dedupe check, and it counts against the rate of the caller who started the work (`act/core/bus.js` 1.7.0), so one caller can no longer fill a shared script's identity for the others. A time trigger's root is its `runsAs` identity, so a trigger pays for its own work.
+- **3:** a native action's thrown error answers 422 `ACTION_ERROR`, whatever it carries.
+- **6:** an `id` is used as sent: `""`, `7`, `null` or `{}` is refused 400 `BAD_ENVELOPE` (`act/core/envelope.js` 1.2.1, `act.js` 1.9.3, `act/core/edge.js` 1.0.4).
+- `act/CHANGELOG.md` says what `v0.54.3` code this made unreachable, and was deleted.
+- Tests: `act/test/caller-pays.test.js` 1.0.0 is new; it, `dedupe-full.test.js` 1.1.0 and `transient.test.js` 1.3.0 hold 11 FAIL-FIRST tests that fail on `v0.54.3`'s files.
+
+## 11 Nov: the cold read of v0.3.5
+
+The `v0.3.5` tree went to a sixth fresh session, scoped to that release's changes: the dedupe check and its tests, the lines `v0.3.5` changed, and every sentence that states one of the release's values. Its report is `docs/cold-read-v035.md`, word for word; its line numbers are those of the `v0.3.5` tree.
+
+- **It ran:** `npm test` (404 of 404), `npm run test:check`, `lab/lab-check.sh` (12 of 12), the mutation harness (all 144 rows identical), the three mutations of the Known-gaps line, and its own trials of callers at the cap.
+- **Its 16 findings, and how they are settled in `v0.3.6`:**
+  - **3, 6 and 7:** in the kernel, by SYNTHEKOS `v0.54.4` (above).
+  - **1, 2, 4 and 8:** each was a sentence of `docs/host.md` that stated what a case of the dedupe check does. The sentences are gone, and the section gives one rule: after any 503, retry with a new id.
+  - **5:** the memory figures are the reader's method's, the higher of two methods on SYNTHEKOS's host machine.
+  - **9:** with `v0.54.4` a `DEDUPE_FULL` is always the caller's own identity's.
+  - **10:** `docs/host.md` ("Triggers") says what happens to a refused fire.
+  - **11 and 12:** the Known-gaps line is gone. Removing either of the bus's two age drops changes nothing, and removing both is caught by `npm test`; the floor's test sends `retryAfterMs: 0`; and the engine code the third mutation edited is deleted.
+  - **13:** the README's Known gaps name the reply, a refusal's reason and `.dedupe.jsonl`.
+  - **14:** the README names both measurements whose machine is not recorded.
+  - **15:** the README no longer lists what `lab/lab-check.sh` prints.
+  - **16:** the line on line numbers above, for this read and the fifth.
+
 ## Index: every bare tag in the kernel, by file
 
 | File | Tag → review |
 |---|---|
 | `act.js` | 1.1.0's list of 7 → 28 Oct host adapter · H1 → R2 · R1 M2, R1 L4, re-review N2, third check C1/C2 → 5 Nov R1 · F04, F05, F09 → 5 Nov 2026 · round 1 → v0.53.2 |
-| `act/core/bus.js` | F04, F05, F06 → 5 Nov 2026 · M3 → R2 · S4 → 30 Oct self-review · "the fifth cold read's #1" → 11 Nov, v0.54.3, and 11 Nov, the cold read of v0.3.4 |
+| `act/core/bus.js` | F04, F05, F06 → 5 Nov 2026 · M3 → R2 · S4 → 30 Oct self-review · "the fifth cold read's #1" → 11 Nov, v0.54.3, and 11 Nov, the cold read of v0.3.4 · "the sixth cold read's #3", "#7" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 |
+| `act/core/envelope.js` | "the sixth cold read's #6" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 |
 | `act/core/targets.js` | round 2 → v0.53.2 |
 | `act/core/registry.js` | C1/C2 → 5 Nov third check · N1 → 11 Nov, v0.54.2 |
 | `act/actions/fetch.js` | F09 → 5 Nov 2026 |
@@ -408,7 +435,8 @@ The whole `v0.3.4` tree went to a fifth fresh session, the same way and with the
 | `act/test/review-fn.test.js` | U1, C1, C2 → R-fn |
 | `act/test/mailbox.test.js` | R2, R3 → 4 Nov mailbox reviews · "a blocker" → v0.53.2 round 1 |
 | `act/test/make-registry.test.js` | "the fourth cold read's #1", "cold read v0.3.3 #1" → 11 Nov, v0.54.2, and 11 Nov, the cold read of v0.3.3 |
-| `act/test/dedupe-full.test.js` | "the fifth cold read's #1" → 11 Nov, v0.54.3, and 11 Nov, the cold read of v0.3.4 · M14 → the lab's mutation M14 (`lab/mutations/`) |
+| `act/test/caller-pays.test.js` | "the sixth cold read's #7" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 |
+| `act/test/dedupe-full.test.js` | "the fifth cold read's #1" → 11 Nov, v0.54.3, and 11 Nov, the cold read of v0.3.4 · "the sixth cold read's #6" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 · M14 → the lab's mutation M14 (`lab/mutations/`) |
 | `act/test/p0.test.js` | F04, F05, F06 → 5 Nov 2026 |
 | `act/test/daemon.test.js` | round 1, round 2 → v0.53.3 |
-| `act/test/transient.test.js` | round 1 → v0.53.4 |
+| `act/test/transient.test.js` | round 1 → v0.53.4 · "the sixth cold read's #3" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 |

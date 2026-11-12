@@ -1,4 +1,4 @@
-// edge.js — v1.0.3 · POST /api/act: where outside callers enter the bus · changelog: act/CHANGELOG.md#actcoreedgejs
+// edge.js — v1.0.4 · POST /api/act: where outside callers enter the bus · changelog: act/CHANGELOG.md#actcoreedgejs
 // SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // POST /api/act — where outside callers (EUsers, devices, apps) enter the bus
@@ -48,7 +48,7 @@ function createEdge({ bus, resolveKey }) {
     let body;
     try { body = await readBody(req); } catch (e) { return send(res, e.status || 400, { ok: false, code: ERR.BAD_ENVELOPE, error: e.message }); }
     if (!body || typeof body !== 'object' || typeof body.action !== 'string') return send(res, 400, { ok: false, code: ERR.BAD_ENVELOPE, error: 'body must be { "action": "…", "input": { … } }' });
-    const r = await bus.ask(who, body.action, body.input === undefined ? {} : body.input, { labels: Array.isArray(body.labels) ? body.labels : [], id: typeof body.id === 'string' ? body.id : undefined });
+    const r = await bus.ask(who, body.action, body.input === undefined ? {} : body.input, { labels: Array.isArray(body.labels) ? body.labels : [], id: body.id });   // 1.0.4 (v0.54.4): the id as sent — a non-string is refused, never replaced
     return send(res, r.ok ? 200 : (STATUS[r.code] || 400), r);
   };
 }

@@ -1,8 +1,11 @@
-// dedupe-full.test.js — v1.0.0 · tests: an id is remembered for the whole window; at the cap the bus refuses (DEDUPE_FULL), never forgets · changelog: act/CHANGELOG.md#acttestdedupe-fulltestjs
+// dedupe-full.test.js — v1.1.0 · tests: a root message's id is remembered for the whole window; at the cap the bus refuses (DEDUPE_FULL), never forgets · changelog: act/CHANGELOG.md#acttestdedupe-fulltestjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // The fifth cold read's #1: bus.js 1.5.0 dropped an identity's oldest id at dedupeCap whatever its age — on a request
 // (bus.js:132) and at start (bus.js:68) — so an id inside the 24 h window could be replayed. Tests marked FAIL-FIRST fail on
-// kernel 0.54.2 (bus.js 1.5.0); tests marked GUARD hold on both.
+// kernel 0.54.2 (bus.js 1.5.0); tests marked GUARD hold on both. 1.1.0 (v0.54.4): a child the bus made is not remembered, so the script
+// tests of 1.0.0 (a script refused before it starts, a 422 naming DEDUPE_FULL) are gone with what they tested — what replaces them is in
+// caller-pays.test.js; the empty-id test (the sixth cold read's #6) and the two non-string-id tests fail on 0.54.3 (envelope.js 1.2.0,
+// act.js 1.9.2, edge.js 1.0.3).
 // Run: node --test test/dedupe-full.test.js
 'use strict';
 const test = require('node:test');
@@ -13,8 +16,6 @@ const registry = require(path.join(ROOT, 'core/registry'));
 const caps = require(path.join(ROOT, 'core/capabilities'));
 const { Names } = require(path.join(ROOT, 'core/names'));
 const { Bus } = require(path.join(ROOT, 'core/bus'));
-const { createEngine } = require(path.join(ROOT, 'proteus/engine'));
-const { Supervisor } = require(path.join(ROOT, 'daemon/supervisor'));
 const SPEC = JSON.parse(fs.readFileSync(path.join(ROOT, 'actions/registry.spec.json'), 'utf8')).actions.filter((e) => e.kind !== 'script');
 const tmp = (t) => fs.mkdtempSync(path.join(os.tmpdir(), 'dd-' + t + '-'));
 const H = 3600000, DAY = 24 * H;
@@ -133,7 +134,7 @@ test('FAIL-FIRST edge: the edge sends the refusal\'s own Retry-After, rounded up
   const post = () => fetch('http://127.0.0.1:' + srv.address().port + '/act', { method: 'POST', headers: { authorization: 'Bearer k', 'content-type': 'application/json' }, body: JSON.stringify({ action: 'calc', input: {} }) });
   try {
     const r = await post(); assert.equal(r.status, 503); assert.equal(r.headers.get('retry-after'), '7201', 'rounded up');
-    reply.retryAfterMs = 1; const r1 = await post(); assert.equal(r1.headers.get('retry-after'), '1', 'at least 1');
+    reply.retryAfterMs = 0; const r1 = await post(); assert.equal(r1.headers.get('retry-after'), '1', 'at least 1: 0 ms is sent as 1 s, not 0');
     delete reply.retryAfterMs; reply.code = 'DAEMON_FULL'; const r2 = await post(); assert.equal(r2.headers.get('retry-after'), '5', 'a code with no retryAfterMs keeps 5 s');
   } finally { srv.close(); }
 });
@@ -154,59 +155,58 @@ test('FAIL-FIRST scheduler: a time trigger whose identity is full is refused DED
   assert.ok(lost && lost.code === 'DEDUPE_FULL', 'lost after the ladder, and the audit line says why: ' + JSON.stringify(audit.map((r) => r.kind + ':' + (r.code || ''))));
 });
 
-// ---------- a script: a 503 means the script did not start; a 422 naming DEDUPE_FULL means it did ----------
-function scriptWorld(scripts, { cap, mode, prefill = [] }) {
-  const box = tmp('box'), files = tmp('f'), audit = [];
-  const sup = mode === 'daemon' ? new Supervisor({ audit: () => {} }) : false;
-  const engine = createEngine({ stateRoot: box, audit: () => {}, daemon: sup });
-  const acts = actions(scripts.map(([n, src]) => [n, src]), engine, scripts.map(([, , world]) => !!world));
-  const names = scripts.map(([n]) => n);
-  const ids = caps.fromList([...['alex', 'sam'].map((p) => ({ name: p, kind: 'person', owner: p, actions: { calc: {}, 'file-append': {}, ...Object.fromEntries(names.map((n) => [n, {}])) } })),
-    ...names.map((n) => ({ name: n, kind: 'script', owner: 'alex', actions: { calc: {}, 'file-append': {}, [n]: {} } }))]);
-  const now = Date.now();
-  if (prefill.length) fs.writeFileSync(path.join(files, '.dedupe.jsonl'), prefill.map(([f, i]) => JSON.stringify({ f, i, t: now - H })).join('\n') + '\n');
-  const bus = new Bus({ registry: acts, identities: ids, names: new Names('local'), audit: (l) => audit.push(JSON.parse(l)), filesRoot: files, clock: () => Date.now(), dedupeCap: cap });
-  return { bus, audit, files, close: () => { engine.close(); if (sup) sup.close(); } };
-}
-for (const mode of ['in-process', 'daemon']) {
-  test('FAIL-FIRST script (' + mode + '): a script whose identity is full is refused DEDUPE_FULL before it starts — transient, retryAfterMs, and nothing run', async () => {
-    const w = scriptWorld([['p2', '(get (calc :expr "1+1") "result")']], { cap: 1, mode, prefill: [['p2', 'old']] });
-    try {
-      const r = await w.bus.ask('alex', 'p2', {}, {});
-      assert.equal(r.ok, false, JSON.stringify(r));
-      assert.equal(r.code, 'DEDUPE_FULL', 'not refused before it started: ' + JSON.stringify(r));
-      assert.equal(r.transient, true);
-      assert.ok(r.retryAfterMs > DAY - H - 60000 && r.retryAfterMs <= DAY - H, 'retryAfterMs: when p2\'s oldest id leaves the window — ' + r.retryAfterMs);
-      assert.ok(!w.audit.some((x) => x.outcome === 'run'), 'something ran: ' + JSON.stringify(w.audit.filter((x) => x.outcome === 'run').map((x) => x.action)));
-    } finally { w.close(); }
-  });
-  test('FAIL-FIRST script (' + mode + '): a refused call after a file-append answers 422 naming DEDUPE_FULL, the file is appended once, and the retry is refused before it starts', async () => {
-    const w = scriptWorld([['p3', '(do (file-append :name "log" :text "x") (calc :expr "1+1"))', true]], { cap: 1, mode });
-    try {
-      const r = await w.bus.ask('alex', 'p3', {}, {});
-      assert.equal(r.ok, false, JSON.stringify(r));
-      assert.equal(r.code, 'ACTION_ERROR', 'the script had started (file-append ran) — it must not answer as if it had not: ' + JSON.stringify(r));
-      assert.notEqual(r.transient, true);
-      assert.match(r.error, /DEDUPE_FULL/, 'the message names what stopped it');
-      const f = path.join(w.files, 'p3', 'log');
-      assert.equal(fs.readFileSync(f, 'utf8'), 'x', 'appended once');
-      const again = await w.bus.ask('alex', 'p3', {}, {});
-      assert.equal(again.code, 'DEDUPE_FULL', 'the retry: p3 is full, refused before it starts — ' + JSON.stringify(again));
-      assert.equal(again.transient, true);
-      assert.equal(fs.readFileSync(f, 'utf8'), 'x', 'still appended once');
-    } finally { w.close(); }
-  });
-}
-test('FAIL-FIRST script (daemon): two calls pass the pre-check together; the second\'s first action call is refused — 503, transient, and nothing of it ran', async () => {
-  // in a daemon both pre-checks run while the first daemon starts, so the second call is refused by its child call, not by the pre-check
-  const w = scriptWorld([['p2', '(get (calc :expr "1+1") "result")']], { cap: 1, mode: 'daemon' });
+// ---------- an id (the sixth cold read's #6) ----------
+test('FAIL-FIRST non-string id (act.js): an id that is not a string (7, null, {}) is refused 400 BAD_ENVELOPE through act.js — never replaced, never run', async () => {
+  const APP = path.join(ROOT, '..');
+  const actmod = require(path.join(APP, 'act.js'));
+  const ALEX = { role: 'admin', auth: 'login', actGrants: null, uniqueId: 'a1b2c3d4-0000-4000-8000-00000000000f', loginId: 'alex' };
+  const BOT = { role: 'euser', auth: 'key', uniqueId: 'a1b2c3d4-0000-4000-8000-0000000000b0', loginId: 'bot', actGrants: JSON.stringify({ owner: 'alex', ownerId: ALEX.uniqueId, actions: { calc: {} } }) };
+  const USERS = [ALEX, BOT];
+  const prisma = { user: { findMany: async () => USERS.slice(), findUnique: async ({ where }) => USERS.find((u) => Object.entries(where).every(([k, v]) => u[k] === v)) || null, update: async () => null } };
+  const src = path.join(ROOT, 'actions'), actionsDir = tmp('acts');
+  const builtins = JSON.parse(fs.readFileSync(path.join(src, 'registry.json'), 'utf8')).actions.filter((e) => e.kind !== 'script');
+  for (const e of builtins) fs.copyFileSync(path.join(src, e.file), path.join(actionsDir, e.file));
+  fs.writeFileSync(path.join(actionsDir, 'registry.json'), JSON.stringify({ actions: builtins }));
+  const appDir = tmp('app'); fs.mkdirSync(path.join(appDir, 'act-files'), { recursive: true });
+  const A = actmod.create({ prisma, models: { isInstalled: () => false }, modelUrl: 'http://127.0.0.1:1', appDir, log: { error() {} }, actionsDir });
+  const call = async (body) => { const res = { code: 0, body: null, status(c) { this.code = c; return this; }, json(b) { this.body = b; return this; }, set() { return this; } }; await A.route({ euser: BOT, body }, res); return res; };
   try {
-    const [a, b] = await Promise.all([w.bus.ask('alex', 'p2', {}, {}), w.bus.ask('sam', 'p2', {}, {})]);   // two callers: each caller's own set holds its one id
-    assert.equal(a.ok, true, JSON.stringify(a));
-    assert.equal(b.code, 'DEDUPE_FULL', 'the second call: ' + JSON.stringify(b));
-    assert.match(b.error, /did not run: DEDUPE_FULL/, 'refused by its first child call (the engine\'s path), not by the pre-check: ' + b.error);
-    assert.equal(b.transient, true, 'its first action call was the one refused: nothing of it ran');
-    assert.ok(Number.isFinite(b.retryAfterMs), 'retryAfterMs reaches the caller');
-    assert.equal(w.audit.filter((x) => x.outcome === 'run' && x.action === 'calc').length, 1, 'calc ran once, for the first call only');
-  } finally { w.close(); }
+    for (const id of [7, null, {}]) {
+      const r = await call({ id, action: 'calc', input: { expr: '1+1' } });
+      assert.equal(r.code, 400, JSON.stringify(id) + ' was run or replaced: ' + JSON.stringify(r.body));
+      assert.equal(r.body.code, 'BAD_ENVELOPE', JSON.stringify(id));
+    }
+    const ok = await call({ action: 'calc', input: { expr: '1+1' } });
+    assert.equal(ok.code, 200, 'a missing id still gets one: ' + JSON.stringify(ok.body));
+  } finally { if (A.stop) A.stop(); }
+});
+
+test('FAIL-FIRST non-string id (edge): the bus\'s own edge refuses an id that is not a string 400 BAD_ENVELOPE — never replaced, never run', async () => {
+  const http = require('http');
+  const { createEdge } = require(path.join(ROOT, 'core/edge'));
+  const w = world();
+  const srv = http.createServer(createEdge({ bus: w.bus, resolveKey: () => 'bot' }));
+  await new Promise((r) => srv.listen(0, '127.0.0.1', r));
+  const post = (body) => fetch('http://127.0.0.1:' + srv.address().port + '/act', { method: 'POST', headers: { authorization: 'Bearer k', 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  try {
+    for (const id of [7, null, {}]) {
+      const r = await post({ id, action: 'calc', input: { expr: '1+1' } });
+      assert.equal(r.status, 400, JSON.stringify(id));
+      assert.equal((await r.json()).code, 'BAD_ENVELOPE', JSON.stringify(id));
+    }
+    assert.ok(!w.audit.some((x) => x.outcome === 'run'), 'nothing ran');
+    const ok = await post({ action: 'calc', input: { expr: '1+1' } });
+    assert.equal(ok.status, 200, 'a missing id still gets one');
+  } finally { srv.close(); }
+});
+test('FAIL-FIRST empty id: an id of "" is refused BAD_ENVELOPE — never replaced, never run, never remembered; a missing id still gets one', async () => {
+  const w = world();
+  const r = await ask(w, '');
+  assert.equal(r.ok, false, JSON.stringify(r));
+  assert.equal(r.code, 'BAD_ENVELOPE', 'an empty id is refused, not replaced: ' + JSON.stringify(r));
+  assert.ok(!w.audit.some((x) => x.outcome === 'run'), 'nothing ran');
+  assert.equal(lines(w.files).length, 0, 'nothing remembered');
+  const none = await w.bus.ask('bot', 'calc', { expr: '1+1' }, {});
+  assert.equal(none.ok, true, JSON.stringify(none));
+  assert.match(none.id, /^[0-9a-f-]{36}$/, 'a missing id is made: ' + none.id);
 });

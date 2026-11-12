@@ -2,6 +2,8 @@
 
 The entries below were moved verbatim from the file headers of `act/**` and `act.js` on 8 Nov 2026 (SYNTHEKOS tag `v0.53.5-changelog`). One section per file; within a section the newest entry is first and the oldest last; review tags (F-B, H1, R4, S3 …) are as they were. Each file keeps its current version on line 1.
 
+**11 Nov 2026 · SYNTHEKOS tag `v0.54.4` · the caller pays.** v0.54.3's cap made a script's `runsAs` identity fill from every caller's calls, so three callers could lock a fourth out of a shared script for up to 24 h, and the rate limit did the same for a minute. Found by the sixth cold read of ACTBUS (its #7); the rate by this release. Now a child the bus makes is not remembered, and it counts against the rate of the caller who caused it. A native action's error is never transient (its #3), and an id of "" or one that is not a string is refused (its #6), never replaced. What v0.54.3 added for scripts at the cap is removed, because no case can reach it once a child is not remembered: the pre-check before a script starts, the engine's child-call path, the `retryAfterMs` a thrown error carried, and DEDUPE_FULL in the two TRANSIENT lists. Tests: `act/test/caller-pays.test.js` 1.0.0 (new), `dedupe-full.test.js` 1.1.0, `transient.test.js` 1.3.0.
+
 **11 Nov 2026 · SYNTHEKOS tag `v0.54.3` · the dedupe window holds.** `core/bus.js` 1.5.0 promised that an id is remembered for 24 h, "up to dedupeCap ids per identity (oldest of THAT identity go first)": at the cap (50 000) an identity's oldest id was dropped whatever its age, on a request (1.5.0 line 132) and when `.dedupe.jsonl` was loaded at start (line 68), so an id inside the window could be replayed. Found by the fifth cold read of ACTBUS (its #1); the start path by this release. Now nothing is ever dropped by count: an identity that holds `dedupeCap` ids inside the window is refused `DEDUPE_FULL` (transient, HTTP 503) until its oldest id leaves the window, and the refusal says when (`retryAfterMs`; `Retry-After` in whole seconds, rounded up, at least 1). A script whose own identity is at the cap is refused `DEDUPE_FULL` before it starts. A script refused at its first action call (another call took the slot after the check) answers `DEDUPE_FULL`, transient; one refused at a later call answers `ACTION_ERROR` naming `DEDUPE_FULL`. A 503 means the script did not start; a 422 naming `DEDUPE_FULL` means it did, and what it did stands. The cost, as a documented limit: at most 50 000 ids per identity in any 24 h (a sustained average of about 35 a minute; a higher grant `rate` is a burst rate); the ids held inside the window take heap memory, bounded per identity by the cap; `dedupeCap` and `dedupeMs` are the bus's constructor options. Tests: `act/test/dedupe-full.test.js` 1.0.0 (11 FAIL-FIRST on v0.54.2, 2 GUARD).
 
 **11 Nov 2026 · SYNTHEKOS tag `v0.54.2` · N1, a fault found while building this release.** `act.js` refused an action of a kind other than script that carries `runsAs` only AFTER `registry.load` had prepared every script against the whole list of names. A script that called such an action stayed loaded and could be granted: `create()` logged the action's refusal, `saveGrants` accepted a grant of the script, and a call answered 422 `ACTION_ERROR … UNKNOWN_ACTION`. It failed closed (nothing ran), but a loaded script's approved reach named an action that was not loaded. The refusal is now in `registry.check`, before scripts are prepared, so such a script is refused at load (`no action named …`). Reproduced on v0.54.1 by a probe through `create()`; pinned by `make-registry.test.js` ("a script that calls a native action with runsAs is refused at load"). No read had found it; it turned up when the approval tool was routed through the loader's own check (the fourth cold read's #1).
@@ -16,6 +18,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act.js
 
+- v1.9.3 (111126 · v0.54.4: `route` passes the id as sent; a non-string id (7, null, an object) is refused 400 BAD_ENVELOPE by the envelope check — 1.9.2 replaced it with a new one)
 - v1.9.2 (111126 · v0.54.3: `route` sends a transient refusal's own `Retry-After` (edge.js 1.0.3 `retryAfter`): when it clears, if the refusal knows (DEDUPE_FULL), else 5 s)
 - v1.9.1 (111126 · v0.54.2. #1: the refusal of `runsAs` on an action that is not a script moved into the registry's own check (core/registry.js 1.3.0), so the approval step refuses the same set this load does. N1 (the 11 Nov note): before, it ran after the load, so a script that called such an action stayed loaded and grantable and failed at run with UNKNOWN_ACTION. #16 and the Known-gaps item on line 51: the refusal's text now begins `registry entry "<name>": `. The email-grant message names `MAIL_ALLOW in create()'s env`, not "in the .env". The header no longer shows `POST /api/act` with a Bearer key as this file's interface: `route()` takes the EUser the host authenticated, and the reference host's server.js is named as the host that serves that route; line 1 says "the action route", not "the HTTP route")
 - v1.9.0 (091126 · v0.53.8: what `create()` refuses, checked before anything is created. An own option name it does not know: `create(): unknown option "<name>" — the options are prisma, models, modelUrl, productName, appDir, fetchImpl, log, actionsDir, env, daemon, mailTls, triggersFile, clock`; the name is shown with every character outside `A–Z a–z 0–9 _ $` removed and cut at 40 characters. Options that are not an object: `create(): the options must be an object`. A renamed option is refused from a table of old names, with the message 1.8.0 gave. If `models` is given, `modelUrl` is required, and a blank one is none: `create(): models is given, so modelUrl is required — pass the model server's URL as modelUrl`. The model action's handler is built by `modelAdapter({ modelUrl, fetchImpl })`, exported; its own refusal when there is no usable `modelUrl` stays as a second line)
@@ -80,6 +83,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/core/bus.js
 
+- v1.7.0 (111126 · v0.54.4, the sixth cold read's #3 and #7: a child the bus made (`ctx.send`) is not remembered and fills no identity's set — its id is a fresh random one nobody can send again; a root message is unchanged. A child counts against the ROOT caller's rate (`authority[0]`), not the identity it is sent as: the caller who caused the work pays for it, and a time trigger, whose root is its `runsAs` identity, pays for its own. 1.6.0's pre-check before a script starts is removed (nothing can fill a script's identity from its calls), and so is the `retryAfterMs` a thrown error carried. `transient` on a thrown error is believed only from a script (the engine); a native action's error is ACTION_ERROR, whatever it carries. TRANSIENT_CODES no longer names DEDUPE_FULL: only a root is refused it, by refuse())
 - v1.6.0 (111126 · v0.54.3, the fifth cold read's #1: nothing is ever dropped by count. At `dedupeCap` ids inside the window a new id is refused DEDUPE_FULL (transient, `retryAfterMs` = when the identity's oldest id leaves the window); the id is not remembered and nothing runs. At start every id inside the window is kept, whatever the cap (1.5.0 cut each set to the cap, on a request and at load). `refuse()` carries `transient` and `retryAfterMs`; a run's transient error keeps the `retryAfterMs` it carries. DEDUPE_FULL is in TRANSIENT_CODES. Before a script runs, its runsAs identity at the cap → DEDUPE_FULL, nothing started; `dedupeFull()` is the one test of both checks)
 - v1.5.0 (081126 · v0.53.6: option productName (checked by core/product.js; default ACTBUS), given to every action as the frozen ctx.product)
 - v1.4.6 (v0.53.4 · 061126 · second-reader review, round 3: TRANSIENT refusals — a script run the supervisor never started (DAEMON_FULL, DAEMON_EVICTING, DAEMON_OVERLAP, DAEMON_PAUSED, DAEMON_RESTARTING) is answered with that code and transient: true, in the reply and in its audit line, instead of ACTION_ERROR; only for those five codes and only when the error itself says so)
@@ -106,6 +110,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/core/edge.js
 
+- v1.0.4 (111126 · v0.54.4: the edge passes the id as sent; a non-string id is refused 400 BAD_ENVELOPE — 1.0.3 replaced it with a new one)
 - v1.0.3 (111126 · v0.54.3: DEDUPE_FULL → 503; `retryAfter(r)`: a refusal's `retryAfterMs` in whole seconds, rounded up, at least 1, else RETRY_AFTER_S (5); exported for act.js)
 - v1.0.2 (061126: a TRANSIENT refusal → 503 with Retry-After: 5 — the run never started, the same hint the scheduler uses; bus 1.4.6; RETRY_AFTER_S exported for act.js)
 - v1.0.1 (061126: NO_TARGET → 403, bus 1.4.5)
@@ -113,6 +118,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/core/envelope.js
 
+- v1.2.1 (111126 · v0.54.4, the sixth cold read's #6: only a missing id is made by root(); an id of "" is checked, and refused BAD_ENVELOPE — 1.2.0 replaced it with a new one)
 - v1.2.0 (031126 F-B: CREDENTIALS — `grounded` is never inherited by a child and never declared by a caller at the edge; warnings are inherited and may be added exactly as before; ACTBUS docs/reviews.md, PROTEUS-K review finding 1, review 2 F1)
 - was v1.1.0 (301026)
 
@@ -151,6 +157,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/daemon/supervisor.js
 
+- v1.1.2 (111126 · v0.54.4: TRANSIENT is the five codes this file throws; DEDUPE_FULL, never thrown, is no longer named. The two lists stay equal)
 - v1.1.1 (111126 · v0.54.3: TRANSIENT names DEDUPE_FULL too — the bus's code, never thrown here; the engine keeps it from a child call. The two lists stay equal)
 - v1.1.0 (081126 · v0.53.6: option productName; the DAEMON_PAUSED message is host-neutral — "… it stays paused until <product> starts again (check the audit log first)" — because the pause ends only when a new Supervisor is made, not by an admin's hand; the header says the same — "until the process starts again", was "until the server restarts")
 - v1.0.4 (061126 transient refusals, second-reader review, round 3: every refusal of a run that was NEVER ATTEMPTED carries .transient = true and a code — DAEMON_FULL, DAEMON_OVERLAP, DAEMON_EVICTING (an idle daemon is being stopped for this start: a slot frees within graceMs), DAEMON_PAUSED (the breaker), DAEMON_RESTARTING (the crash back-off); the bus passes the class on, the scheduler retries such a fire once. Only this file sets it: a daemon cannot claim it, because a daemon's own failures are built from its message text, never its fields. A shut-down supervisor is NOT transient)
@@ -188,6 +195,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/proteus/engine.js
 
+- v1.6.0 (111126 · v0.54.4: 1.5.1's child-call transient path is removed — no child call can be refused DEDUPE_FULL any more (bus 1.7.0). A script that started and then met a refused call answers ACTION_ERROR, its message naming the code; a run the supervisor refused before it started keeps its code and .transient (1.4.1))
 - v1.5.1 (111126 · v0.54.3: a child call the bus refused transiently is kept in THIS process; the language cannot catch an error, so that refusal ended the script. When it was the script's FIRST action call, the caller gets its code, `transient: true` and `retryAfterMs`; after an earlier call it stays ACTION_ERROR, its message naming the code. In-process and daemon alike; only the bus's reply counts, never the daemon's word)
 - v1.5.0 (081126 · v0.53.6: option productName, given to the Supervisor it makes)
 - v1.4.1 (061126 transient refusals: a supervisor refusal of a run that never started keeps its code and .transient — only the five supervisor codes, only from the supervisor itself)
@@ -237,6 +245,10 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 - v1.1.0 (061126 · v0.53.5 round 2, second-reader review, round 1: + SIGHUP; a stop() or server that does not exist yet is logged and the stop goes on)
 - was v1.0.0 (061126 · SYNTHEKOS v0.53.5 · second-reader review, round 3 on 0.53.3, ask 2: the server's stop path)
 
+## act/test/caller-pays.test.js
+
+- v1.0.0 (111126 · v0.54.4, new: 6 tests. FAIL-FIRST: three callers use a shared script at a cap of 3 and a fourth is still served (in-process and daemon); a caller one id below its cap runs a script that runs as itself; three callers drive a script identity allowed 3 a minute and a fourth is not refused RATE; a caller allowed 3 a minute is refused at its own 4th message through a script. GUARD: a time trigger's calls count against its runsAs identity)
+
 ## act/test/collect.test.js
 
 - v1.0.1 (031126 F-B: one assertion inverted — a literal :name makes an action call not grounded; count by a literal comparison is not grounded)
@@ -273,6 +285,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/test/dedupe-full.test.js
 
+- v1.1.0 (111126 · v0.54.4: the five script tests of 1.0.0 are removed with what they tested; three tests added, FAIL-FIRST: an id of "" is refused BAD_ENVELOPE, and a missing id still gets one; an id that is not a string is refused 400 BAD_ENVELOPE through act.js, and through the edge; the edge test sends `retryAfterMs: 0`, which only the floor turns into 1 s)
 - v1.0.0 (111126 · v0.54.3, new: an id is remembered for the whole window; at the cap the bus refuses DEDUPE_FULL, never forgets — the request path, the start path, ageing out, per identity, M14, through act.js (503 + the true Retry-After), the edge, a time trigger (the ladder, then lost), and a script: refused before it starts when its identity is full, a 422 naming DEDUPE_FULL after a file-append (appended once; the retry refused before it starts), each in-process and in a daemon, and two calls past the pre-check together (the second's first action call refused, 503). 11 FAIL-FIRST on v0.54.2, 2 GUARD)
 
 ## act/test/email.test.js
@@ -382,6 +395,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/test/transient.test.js
 
+- v1.3.0 (111126 · v0.54.4: "the same five codes"; two tests added, FAIL-FIRST: a native action that did work and then throws an error marked transient is ACTION_ERROR, for every code; a native that rethrows a child refused by a busy daemon is ACTION_ERROR while the same refusal of the script itself is DAEMON_FULL, transient)
 - v1.2.2 (111126 · v0.54.3: the code list names DEDUPE_FULL; "the same six codes")
 - v1.2.1 (081126 · v0.53.6: create() is given modelUrl, not ollamaUrl)
 - v1.2.0 (061126 second-reader review, round 1: ONE ladder for every transient code — 5 s, 30 s, then lost — with the one exception the end-to-end test proves: a DAEMON_EVICTING refusal is never the last word; + Retry-After: 5 on the edge AND on act.js's /api/act)

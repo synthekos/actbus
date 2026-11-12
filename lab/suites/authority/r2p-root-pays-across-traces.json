@@ -1,0 +1,64 @@
+{
+ "id": "r2p-root-pays-across-traces",
+ "twin": "hostile",
+ "about": "the root caller at rate 4 runs a service script twice (2 traces x 3 messages): its 5th message, a child, is refused RATE by the BUS, audited",
+ "identities": [
+  {
+   "login": "boss",
+   "grants": {
+    "actions": {
+     "go": {},
+     "calc": {}
+    },
+    "rate": 4
+   }
+  },
+  {
+   "login": "svc",
+   "grants": {
+    "actions": {
+     "go": {},
+     "calc": {}
+    },
+    "rate": 120
+   }
+  }
+ ],
+ "scripts": [
+  {
+   "name": "go",
+   "runsAs": "svc",
+   "source": "(do (calc :expr \"1+1\") (calc :expr \"2+2\"))",
+   "world": false
+  }
+ ],
+ "steps": [
+  {
+   "as": "boss",
+   "action": "go"
+  },
+  {
+   "as": "boss",
+   "action": "go"
+  }
+ ],
+ "expect": [
+  {
+   "step": 0,
+   "ok": true
+  },
+  {
+   "step": 1,
+   "ok": false
+  },
+  {
+   "audit": {
+    "action": "calc",
+    "outcome": "refused",
+    "code": "RATE"
+   },
+   "count": 1
+  }
+ ],
+ "suite": "authority"
+}

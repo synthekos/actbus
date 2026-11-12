@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-# mutate.py — v1.2.2 (111126: kernel 0.54.3 — M14's first anchor follows bus 1.6.0, the same mutation) · v1.2.1 (091126: names neutral; every mutation unchanged) · v1.2.0 (071126: ACTBUS repo, kernel 0.53.5-headers — M13's error-path anchor follows bus 1.4.6) · v1.1.0 (061126: kernel 0.53.2 — M3 + str/join (second reader, 11:45), + M15 (the build session, bus 1.4.5)) · v1.0.1 (061126: M13/M14 anchored on the success path's unique '  ]);' + clearTimeout — v1.0.0's anchor occurred twice and was refused) · The second reader's sealed mutations M1–M14 (mutations/SEALED-LIST_061126.md, list sha256 42e73dce…6d74).
+# mutate.py — v1.2.3 (111126: kernel 0.54.4 — M12's two anchors follow bus 1.7.0's `payer`, the same mutation) · v1.2.2 (111126: kernel 0.54.3 — M14's first anchor follows bus 1.6.0, the same mutation) · v1.2.1 (091126: names neutral; every mutation unchanged) · v1.2.0 (071126: ACTBUS repo, kernel 0.53.5-headers — M13's error-path anchor follows bus 1.4.6) · v1.1.0 (061126: kernel 0.53.2 — M3 + str/join (second reader, 11:45), + M15 (the build session, bus 1.4.5)) · v1.0.1 (061126: M13/M14 anchored on the success path's unique '  ]);' + clearTimeout — v1.0.0's anchor occurred twice and was refused) · The second reader's sealed mutations M1–M14 (mutations/SEALED-LIST_061126.md, list sha256 42e73dce…6d74).
 # Each mutation = exact text replacements in a COPY of the lab kernel; every old text must occur exactly once (else: refuse, mapping wrong).
 # usage: mutate.py <kernel-dir> <out-dir> <Mi>      (prints the mapping; never touches the source kernel)
 import sys, os, shutil
@@ -28,8 +28,8 @@ M = {
  'M10': ('strictControl does nothing', [('act/core/bus.js', "const ctlTaint = grant.strictControl ? env_.tainted(env.ctl || []) : [];", "const ctlTaint = [];")]),
  'M11': ('chain uses only the callee grant', [('act/core/capabilities.js', "  for (const name of chain) {", "  for (const name of chain.slice(-1)) {")]),
  'M12': ('rate limit keyed by trace', [
-     ('act/core/bus.js', "win = (this.rates.get(env.from) || []).filter((x) => t - x < 60000);", "win = (this.rates.get(env.trace) || []).filter((x) => t - x < 60000);"),
-     ('act/core/bus.js', "win.push(t); this.rates.set(env.from, win);", "win.push(t); this.rates.set(env.trace, win);")]),
+     ('act/core/bus.js', "win = (this.rates.get(payer) || []).filter((x) => t - x < 60000);", "win = (this.rates.get(env.trace) || []).filter((x) => t - x < 60000);"),
+     ('act/core/bus.js', "win.push(t); this.rates.set(payer, win);", "win.push(t); this.rates.set(env.trace, win);")]),
  'M13': ('audit run line written after the run', [
      ('act/core/bus.js', RUNLINE_OLD, RUNLINE_NEW),
      ('act/core/bus.js', "      ]);\n      clearTimeout(timer);\n", "      ]);\n      clearTimeout(timer); __runLine();\n"),

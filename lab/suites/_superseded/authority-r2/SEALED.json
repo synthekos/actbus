@@ -1,0 +1,7 @@
+{
+ "sealedAt": "2026-11-12T14:23:16.542Z",
+ "by": "lab 0.2.3",
+ "scenarios": {
+  "r2-bus-rate-across-traces.json": "992e90335972508737d5f356ebf091fcfeea98cd92181134866f81fdbf3b80d0"
+ }
+}
