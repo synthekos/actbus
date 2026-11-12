@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-# mutate.py — v1.2.1 (091126: names neutral; every mutation unchanged) · v1.2.0 (071126: ACTBUS repo, kernel 0.53.5-headers — M13's error-path anchor follows bus 1.4.6) · v1.1.0 (061126: kernel 0.53.2 — M3 + str/join (second reader, 11:45), + M15 (the build session, bus 1.4.5)) · v1.0.1 (061126: M13/M14 anchored on the success path's unique '  ]);' + clearTimeout — v1.0.0's anchor occurred twice and was refused) · The second reader's sealed mutations M1–M14 (mutations/SEALED-LIST_061126.md, list sha256 42e73dce…6d74).
+# mutate.py — v1.2.2 (111126: kernel 0.54.3 — M14's first anchor follows bus 1.6.0, the same mutation) · v1.2.1 (091126: names neutral; every mutation unchanged) · v1.2.0 (071126: ACTBUS repo, kernel 0.53.5-headers — M13's error-path anchor follows bus 1.4.6) · v1.1.0 (061126: kernel 0.53.2 — M3 + str/join (second reader, 11:45), + M15 (the build session, bus 1.4.5)) · v1.0.1 (061126: M13/M14 anchored on the success path's unique '  ]);' + clearTimeout — v1.0.0's anchor occurred twice and was refused) · The second reader's sealed mutations M1–M14 (mutations/SEALED-LIST_061126.md, list sha256 42e73dce…6d74).
 # Each mutation = exact text replacements in a COPY of the lab kernel; every old text must occur exactly once (else: refuse, mapping wrong).
 # usage: mutate.py <kernel-dir> <out-dir> <Mi>      (prints the mapping; never touches the source kernel)
 import sys, os, shutil
@@ -37,7 +37,7 @@ M = {
  'M15': ('the kernel target check removed — bus 1.4.5 only (added by the build session)', [
      ('act/core/bus.js', "    if (tj) return this.refuse(env, tj.code === 'BAD_INPUT' ? ERR.BAD_INPUT : ERR.NO_TARGET, tj.reason);", "    /* M15 */")]),
  'M14': ('dedupe remembers only successes', [
-     ('act/core/bus.js', "    mine.delete(env.id); mine.set(env.id, now);\n", "    mine.delete(env.id);   // M14\n"),
+     ('act/core/bus.js', "    mine.set(env.id, now);\n", "    // M14: not remembered here\n"),
      ('act/core/bus.js', "      ]);\n      clearTimeout(timer);\n", "      ]);\n      clearTimeout(timer); mine.set(env.id, now);\n")]),
 }
 if __name__ == '__main__':

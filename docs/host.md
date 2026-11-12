@@ -62,7 +62,7 @@ The refusals of steps 1, 3 and 4 are audited, at most 10 a minute per EUser. The
 
 `act/core/edge.js` also exports `createEdge` and `keyResolver`: a second handler for `POST /api/act`, which turns a key into an identity. It is the core's own test edge, used by `act/test/`. A host uses `act.route`, and authenticates its EUsers itself. `act.js`'s header names `POST /api/act` with `Authorization: Bearer <the EUser's key>` as the way SYNTHEKOS's own server serves `route`: that is how SYNTHEKOS authenticates, not something the kernel reads.
 
-**The reply** is JSON: `{ "ok": true, … }` with status 200, or `{ "ok": false, "code": "…", "error": "…" }`. The status of a refusal by the bus (`act/core/edge.js`:16):
+**The reply** is JSON: `{ "ok": true, … }` with status 200, or `{ "ok": false, "code": "…", "error": "…" }`. A 503 `DEDUPE_FULL` refusal also has `"retryAfterMs"`: the milliseconds until the identity can be served again. The status of a refusal by the bus (`act/core/edge.js`:19):
 
 | Status | Codes |
 |---|---|
@@ -75,10 +75,18 @@ The refusals of steps 1, 3 and 4 are audited, at most 10 a minute per EUser. The
 | 429 | `RATE`, `BUDGET`, `HOP_LIMIT` |
 | 500 | `AUDIT` |
 | 502 | `NO_ROUTE` |
-| 503 | `DAEMON_FULL`, `DAEMON_EVICTING`, `DAEMON_OVERLAP`, `DAEMON_PAUSED`, `DAEMON_RESTARTING` |
+| 503 | `DAEMON_FULL`, `DAEMON_EVICTING`, `DAEMON_OVERLAP`, `DAEMON_PAUSED`, `DAEMON_RESTARTING`, `DEDUPE_FULL` |
 | 504 | `TIMEOUT` |
 
-The `DAEMON_…` refusals are transient: the run never started, and the reply carries `Retry-After: 5`. An exception inside the kernel answers 500 `INTERNAL`.
+The `DAEMON_…` refusals are transient: the run never started, and the reply carries `Retry-After: 5`. `DEDUPE_FULL` is transient too, and its `Retry-After` is `retryAfterMs` in whole seconds, rounded up, at least 1. An exception inside the kernel answers 500 `INTERNAL`.
+
+**The dedupe check.** The bus keeps every id that passes this check (the README's second) for 24 h, on disk (`<appDir>/act-files/.dedupe.jsonl`), and a repeated id answers 409 `DUPLICATE`. It keeps at most 50 000 ids per identity inside that window. At that cap a new id is refused 503 `DEDUPE_FULL` until the identity's oldest id leaves the window; no id is forgotten to make room. So an identity can send at most 50 000 ids in any 24 h, a sustained average of about 35 a minute, and a grant's `rate` above that is a burst rate. The two numbers are the options `dedupeCap` (50 000) and `dedupeMs` (86 400 000 ms) of the bus's constructor (`act/core/bus.js`); `create()` does not take them, so a host gets these defaults.
+- An `id` or a `trace` is a string of 1–80 UTF-16 code units (`act/core/envelope.js`): one emoji is two units, so an id of 41 emoji is refused 400 `BAD_ENVELOPE`.
+- The ids kept cost memory: about 100 bytes per 36-character id (the kind the kernel makes when a request has no `id`), about 5 MB per identity at the cap. At the 80-unit bound an id costs at most about 196 bytes, about 9.8 MB per identity at the cap. These were measured on SYNTHEKOS's host machine with Node 26.7.0: the heap with one identity's 50 000 ids held, less the heap with that set dropped, over 50 000.
+- A `DEDUPE_FULL` refusal of the caller's own identity is made at the dedupe check and does not keep the id: the same id can be sent again once a slot frees.
+- A transient refusal after the dedupe check has consumed the caller's id; retry with a new id; nothing ran, so a new id cannot repeat an action.
+- A script whose identity is at the cap is refused before it starts. A 503 means the script did not start; a 422 naming `DEDUPE_FULL` means it did, and what it did stands.
+- A `remember` before the first action call stands, and a retry writes the same value again.
 
 ## The actions
 
@@ -175,7 +183,7 @@ name 7 → HTTP 400 {"ok":false,"id":"…","trace":"…","action":"greet","code"
 audit log: <temp folder>/actbus-native-…/app/logs/act.jsonl
 ```
 
-**What `run` gets and gives** (`act/core/bus.js`:172–241). The bus calls `run` only after every check in the README's list has passed and the "run" line is on disk. `input` is the request's input, already checked against the entry's `input`. What `run` returns, or what its promise resolves to, becomes the reply's `value`: it must be plain JSON, and `undefined` becomes `null`. Anything else answers 422 `ACTION_ERROR`, `greet returned something that is not plain JSON`. A thrown error answers 422 `ACTION_ERROR` with the error's message, cut at 300 characters; an error whose `code` is `TIMEOUT`, or a daemon's transient code, keeps that code. A run that takes longer than `timeoutMs` answers 504 `TIMEOUT`, `greet did not finish within 2000 ms`. A successful reply is labelled with every warning label the call received plus the entry's `produces`; a credential it received (`grounded`) is not carried. `ctx` is frozen. The fields a native action can use:
+**What `run` gets and gives** (`act/core/bus.js`:185–258). The bus calls `run` only after every check in the README's list has passed and the "run" line is on disk. `input` is the request's input, already checked against the entry's `input`. What `run` returns, or what its promise resolves to, becomes the reply's `value`: it must be plain JSON, and `undefined` becomes `null`. Anything else answers 422 `ACTION_ERROR`, `greet returned something that is not plain JSON`. A thrown error answers 422 `ACTION_ERROR` with the error's message, cut at 300 characters; an error whose `code` is `TIMEOUT`, or a daemon's transient code, keeps that code. A run that takes longer than `timeoutMs` answers 504 `TIMEOUT`, `greet did not finish within 2000 ms`. A successful reply is labelled with every warning label the call received plus the entry's `produces`; a credential it received (`grounded`) is not carried. `ctx` is frozen. The fields a native action can use:
 - `identity`: the identity the action runs as; `authority`: the whole chain; `trace`, `time`, `node`, `product` (the host's `productName`);
 - `labels()`: the labels the action has received so far; `addLabels(list)`: adds labels (a warning only: never `grounded`);
 - `send(action, input)`: asks another action, as the same identity and through every check of the bus, and resolves to that action's reply;

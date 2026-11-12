@@ -32,7 +32,7 @@
 - **No raw shell.** No action takes a command string. Hosts and addresses are allow-listed per identity; files are confined to the identity's own folder.
 - **Deterministic first.** Exact jobs, such as arithmetic or reading a number from a page, are native code. The reason was measured during development: language models multiplied two four-digit numbers wrongly on every pass, and nothing showed it. A model may be a labelled fallback, never a silent one.
 - **Bounded work.** Every computed action bounds its own work, because a synchronous action blocks the bus while it runs. For example, `calc` limits every intermediate result to 8 192 bits; the worst case measured was 14 ms.
-- **Every run is audited:** who, the action and its hash, the input, the outcome, the node, the time and the trace. A "run" line is written *before* the action runs. No line means no run (fail closed).
+- **Every run is audited:** who, the action and its hash, the input (for `send` and `email`, the body's sha256 and size instead of the body), the outcome, the node, the time and the trace. Every other action's input is written to the audit log as it was given, model prompts and `file-append` text included, as JSON cut at 300 characters (`act/core/bus.js`). A "run" line is written *before* the action runs. No line means no run (fail closed).
 - **Refuse what is inconsistent** instead of guessing. For example, "Tuesday 31 Oct 2026" is refused by `date-diff`, because 31 Oct 2026 is a Saturday.
 
 ## 3. Many models, many machines

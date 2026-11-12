@@ -1,4 +1,4 @@
-// transient.test.js — v1.2.1 · tests: transient refusals, through every site they pass · changelog: act/CHANGELOG.md#acttesttransienttestjs
+// transient.test.js — v1.2.2 · tests: transient refusals, through every site they pass · changelog: act/CHANGELOG.md#acttesttransienttestjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // One rule, the sites it passes through: supervisor (sets it) → engine (keeps it) → bus (code + transient: true, reply AND audit) →
 // edge (503) → scheduler (a time trigger retries once, then `lost`) · and the mailbox, which needs no change (a refused run claimed
@@ -21,7 +21,7 @@ const { Mailbox } = require(path.join(ROOT, 'mailbox'));
 const SPEC = JSON.parse(fs.readFileSync(path.join(ROOT, 'actions/registry.spec.json'), 'utf8')).actions.filter((e) => e.kind !== 'script');
 const tmp = (t) => fs.mkdtempSync(path.join(os.tmpdir(), 'tr-' + t + '-'));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const CODES = ['DAEMON_FULL', 'DAEMON_EVICTING', 'DAEMON_OVERLAP', 'DAEMON_PAUSED', 'DAEMON_RESTARTING'];
+const CODES = ['DAEMON_FULL', 'DAEMON_EVICTING', 'DAEMON_OVERLAP', 'DAEMON_PAUSED', 'DAEMON_RESTARTING', 'DEDUPE_FULL'];   // 1.2.2 (v0.54.3): + DEDUPE_FULL
 const LONG = '(for-each (a (input xs)) (for-each (b (input xs)) (for-each (c (input xs)) (+ (number a) (number b) (number c)))))';
 const XS = Array.from({ length: 100 }, (_, i) => String(i));
 
@@ -103,7 +103,7 @@ test('GUARD bus: a daemon cannot make its own failure transient — whatever it 
   } finally { w.engine.close(); }
 });
 
-test('FAIL-FIRST edge: a transient refusal answers HTTP 503; the bus and the supervisor name the same five codes', () => {
+test('FAIL-FIRST edge: a transient refusal answers HTTP 503; the bus and the supervisor name the same six codes', () => {
   for (const c of CODES) { assert.equal(ERR[c], c, 'the bus knows ' + c); assert.equal(STATUS[c], 503, c + ' → 503'); }
   const { TRANSIENT } = require(path.join(ROOT, 'daemon/supervisor'));
   const { TRANSIENT_CODES } = require(path.join(ROOT, 'core/bus'));

@@ -358,12 +358,37 @@ The whole `v0.3.3` tree went to a fourth fresh session, the same way and with th
   - **Fixed in this repository's text:** 2 (`docs/proteus-k.md` §7: the `input` declaration), 5 (`docs/host.md`: `make-registry.js` refuses a whole triggers file), 6 (`docs/capability-architecture.md` names no version), 7 (this page's count), 8 (`docs/host.md`: the request labels), 9 (`docs/host.md`: `adminLoginId` is not checked), 10 (the README's measurements, as a list), 11 (`docs/functions-and-mailboxes.md` §3: `labels`, and the topic rule), 12 (which timeout is 115 s and which 120 s), 13 (the README says the provenance record carries SYNTHEKOS-named tags), 14 (the README says which command prints the fingerprint, and that the lab's results name the host) and 15 (the flow diagram enters at `act.route`).
   - **For 6, a rule for every release:** the release's claims table has a row for every sentence in the tree that names a kernel version or a lab fingerprint, whether or not the release touched it, and each row proves the sentence or declares it historical.
 
+## 11 Nov: v0.54.3, the dedupe window holds (rounds 1–3)
+
+The fifth cold read's 1 (below): the duplicate check failed open. `act/core/bus.js` 1.5.0 promised that an id is remembered for 24 h, but it kept at most `dedupeCap` (50 000) ids per identity, and at the cap it dropped that identity's oldest id, whatever its age. So an id inside the 24 h window could be sent again and run again. The fault had two windows:
+- **The request path:** a new id at the cap dropped the identity's oldest id (`bus.js` 1.5.0, line 132). At a grant's highest `rate`, 10 000 a minute, the cap fills in 5 minutes; at the default, 120 a minute, in about 7 hours.
+- **The start path,** found in round 1: when `.dedupe.jsonl` was read back at start, each identity's set was cut to the cap the same way (`bus.js` 1.5.0, line 68).
+
+The four cold reads before it, of `v0.3.0` to `v0.3.3`, missed it, and so did every claims table: no row could find it, because only a reader who set the cap against the sentence "kept on disk for 24 h" could. The fix is in the kernel, so the sentence is now true, rather than a gap written down beside it.
+- **Round 1:** the design approved: at the cap a new id is refused `DEDUPE_FULL`, transient, with the true `Retry-After`; nothing is ever dropped by count, on either path.
+- **Round 2:** a transient refusal must keep meaning that nothing happened. A script whose identity is at the cap is refused before it starts. A script refused at its first action call answers `DEDUPE_FULL`, transient; one refused at a later call answers 422 `ACTION_ERROR` naming `DEDUPE_FULL`, because what it did stands. `retryAfterMs` is in the reply's body as well as in the header.
+- **Round 3:** the host machine's check of the release kit, and the promote.
+- Tests: `act/test/dedupe-full.test.js` 1.0.0 has 11 FAIL-FIRST tests, which fail on `v0.54.2`'s files, and 2 *guards*; `act/test/transient.test.js` 1.2.2 names the sixth transient code. Three ways of breaking the fix are caught only by SYNTHEKOS's release check (README, Known gaps).
+
+## 11 Nov: the cold read of v0.3.4
+
+The whole `v0.3.4` tree went to a fifth fresh session, the same way and with the same brief as the first four. Its report is `docs/cold-read-v034.md`, word for word.
+
+- **It ran:** `npm test` (391 of 391); `npm run test:check` (pass); `lab/lab-check.sh` (12 of 12); `tools/name-hashes.js` (3 of 3); the three examples; the mutation harness, all 144 rows identical; the fingerprint; every PROTEUS-K example of `docs/functions-and-mailboxes.md` §2 through `tools/pk-run.js`; the trigger example with its kill switch; and its own trials of `create()`, `route`, `saveGrants`, the fetch kill switch and `email`.
+- **It could not run:** the git checks (no clone), the byte-identity check (it needs the private SYNTHEKOS repository), the real-model run (no model server), Node 22 and real mail delivery.
+- **Its 14 findings.** Four are settled in `v0.3.5`:
+  - **The behavioural one, 1:** fixed in the kernel by SYNTHEKOS `v0.54.3` (above), which `v0.3.5` carries. `docs/host.md` ("The dedupe check") states the limit, the refusal and what a retry does.
+  - **4:** the README says which machine made the lab's measurements.
+  - **9:** `docs/capability-architecture.md` says that a `send` or `email` run line holds the body's sha256 and size instead of the body, and that every other input is written as given, cut at 300 characters.
+  - **13:** the README says what `lab/lab-check.sh` prints.
+- **The other ten are open:** 2, 3, 5, 6, 7, 8, 10, 11, 12 and 14. Each is opened as an issue on this repository the day it is made public, citing this read.
+
 ## Index: every bare tag in the kernel, by file
 
 | File | Tag → review |
 |---|---|
 | `act.js` | 1.1.0's list of 7 → 28 Oct host adapter · H1 → R2 · R1 M2, R1 L4, re-review N2, third check C1/C2 → 5 Nov R1 · F04, F05, F09 → 5 Nov 2026 · round 1 → v0.53.2 |
-| `act/core/bus.js` | F04, F05, F06 → 5 Nov 2026 · M3 → R2 · S4 → 30 Oct self-review |
+| `act/core/bus.js` | F04, F05, F06 → 5 Nov 2026 · M3 → R2 · S4 → 30 Oct self-review · "the fifth cold read's #1" → 11 Nov, v0.54.3, and 11 Nov, the cold read of v0.3.4 |
 | `act/core/targets.js` | round 2 → v0.53.2 |
 | `act/core/registry.js` | C1/C2 → 5 Nov third check · N1 → 11 Nov, v0.54.2 |
 | `act/actions/fetch.js` | F09 → 5 Nov 2026 |
@@ -383,6 +408,7 @@ The whole `v0.3.3` tree went to a fourth fresh session, the same way and with th
 | `act/test/review-fn.test.js` | U1, C1, C2 → R-fn |
 | `act/test/mailbox.test.js` | R2, R3 → 4 Nov mailbox reviews · "a blocker" → v0.53.2 round 1 |
 | `act/test/make-registry.test.js` | "the fourth cold read's #1", "cold read v0.3.3 #1" → 11 Nov, v0.54.2, and 11 Nov, the cold read of v0.3.3 |
+| `act/test/dedupe-full.test.js` | "the fifth cold read's #1" → 11 Nov, v0.54.3, and 11 Nov, the cold read of v0.3.4 · M14 → the lab's mutation M14 (`lab/mutations/`) |
 | `act/test/p0.test.js` | F04, F05, F06 → 5 Nov 2026 |
 | `act/test/daemon.test.js` | round 1, round 2 → v0.53.3 |
 | `act/test/transient.test.js` | round 1 → v0.53.4 |

@@ -1,4 +1,4 @@
-// act.js — v1.9.1 · the host adapter: the action route, the identities' grants and `create()` · changelog: act/CHANGELOG.md#actjs
+// act.js — v1.9.2 · the host adapter: the action route, the identities' grants and `create()` · changelog: act/CHANGELOG.md#actjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // ## Design
@@ -71,7 +71,7 @@ const registry = require('./act/core/registry');
 const caps = require('./act/core/capabilities');
 const { Names } = require('./act/core/names');
 const { Bus, ERR } = require('./act/core/bus');
-const { STATUS, RETRY_AFTER_S } = require('./act/core/edge');
+const { STATUS, retryAfter } = require('./act/core/edge');
 const { NAME } = require('./act/core/envelope');
 const { createEngine } = require('./act/proteus/engine');
 const { Outbox, parseAllow, checkGrants } = require('./act/mail/outbox');   // 1.3.0
@@ -347,7 +347,7 @@ function create(opts = {}) {
     catch (e) { log.error('[act]', e.message); return res.status(500).json({ ok: false, code: 'INTERNAL', error: 'the action could not be run' }); }
     finally { if (b.action === 'messages' && r && r.ok && b.input && b.input.hold === true) hold(trace); else finish(trace, r); }   // 1.6.0 (ACK, opted into with hold: true — review R1 L4)
     if (!r.ok && r.code === ERR.TAINTED && extra.length) r.error += ' — this EUser can also receive ' + extra.join(' and ') + ' text from this box (' + src.from.join(', ') + '), so its world actions carry those labels';
-    if (!r.ok && r.transient === true && typeof res.set === 'function') res.set('Retry-After', String(RETRY_AFTER_S));   // 1.6.2: the run never started — try again in 5 s
+    if (!r.ok && r.transient === true && typeof res.set === 'function') res.set('Retry-After', retryAfter(r));   // 1.6.2: the run never started · 1.9.2: when it clears, if known (else 5 s)
     return res.status(r.ok ? 200 : (STATUS[r.code] || 400)).json(r);
   }
 

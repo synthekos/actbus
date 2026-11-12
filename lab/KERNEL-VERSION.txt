@@ -1,4 +1,4 @@
 {
-  "version": "0.54.2",
-  "note": "the kernel is this repo: act.js + act/ at tag v0.3.4 = SYNTHEKOS tag v0.54.2 (the approval tool runs the loader's own check), byte-identical"
+  "version": "0.54.3",
+  "note": "the kernel is this repo: act.js + act/ at tag v0.3.5 = SYNTHEKOS tag v0.54.3 (the dedupe window holds: at the cap a new id is refused, none is forgotten), byte-identical"
 }

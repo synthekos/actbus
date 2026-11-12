@@ -1,6 +1,6 @@
 {
   "name": "@synthekos/actbus",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "private": true,
   "description": "The capability kernel inside SYNTHEKOS: identities, messages, hash-pinned actions, PROTEUS-K scripts, provenance labels, a fail-closed audit.",
   "license": "Apache-2.0",

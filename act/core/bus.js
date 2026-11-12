@@ -1,4 +1,4 @@
-// bus.js — v1.5.0 · the message bus: every check in order, then the audit line, then the action · changelog: act/CHANGELOG.md#actcorebusjs
+// bus.js — v1.6.0 · the message bus: every check in order, then the audit line, then the action · changelog: act/CHANGELOG.md#actcorebusjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // ## Design
@@ -38,12 +38,12 @@ const caps = require('./capabilities');
 const targets = require('./targets');   // 1.4.5
 const { checkInput } = require('./registry');
 
-const TRANSIENT_CODES = new Set(['DAEMON_FULL', 'DAEMON_EVICTING', 'DAEMON_OVERLAP', 'DAEMON_PAUSED', 'DAEMON_RESTARTING']);   // 1.4.6 (= supervisor TRANSIENT)
+const TRANSIENT_CODES = new Set(['DAEMON_FULL', 'DAEMON_EVICTING', 'DAEMON_OVERLAP', 'DAEMON_PAUSED', 'DAEMON_RESTARTING', 'DEDUPE_FULL']);   // 1.4.6 (= supervisor TRANSIENT) · 1.6.0: DEDUPE_FULL
 const ERR = Object.freeze({
   BAD_ENVELOPE: 'BAD_ENVELOPE', DUPLICATE: 'DUPLICATE', BUDGET: 'BUDGET', UNKNOWN_IDENTITY: 'UNKNOWN_IDENTITY', RATE: 'RATE',
   UNKNOWN_ACTION: 'UNKNOWN_ACTION', NO_ROUTE: 'NO_ROUTE', NOT_PERMITTED: 'NOT_PERMITTED', BAD_INPUT: 'BAD_INPUT',
   TAINTED: 'TAINTED', HOP_LIMIT: 'HOP_LIMIT', TIMEOUT: 'TIMEOUT', ACTION_ERROR: 'ACTION_ERROR', AUDIT: 'AUDIT', NO_TARGET: 'NO_TARGET',
-  DAEMON_FULL: 'DAEMON_FULL', DAEMON_EVICTING: 'DAEMON_EVICTING', DAEMON_OVERLAP: 'DAEMON_OVERLAP', DAEMON_PAUSED: 'DAEMON_PAUSED', DAEMON_RESTARTING: 'DAEMON_RESTARTING',   // 1.4.6: transient
+  DAEMON_FULL: 'DAEMON_FULL', DAEMON_EVICTING: 'DAEMON_EVICTING', DAEMON_OVERLAP: 'DAEMON_OVERLAP', DAEMON_PAUSED: 'DAEMON_PAUSED', DAEMON_RESTARTING: 'DAEMON_RESTARTING', DEDUPE_FULL: 'DEDUPE_FULL',   // 1.4.6: transient
 });
 
 class Bus {
@@ -65,7 +65,8 @@ class Bus {
       for (const l of text.split('\n')) { if (!l) continue; let j; try { j = JSON.parse(l); } catch (_) { continue; }
         if (!j || typeof j.f !== 'string' || typeof j.i !== 'string' || typeof j.t !== 'number' || now - j.t >= this.dedupeMs) continue;
         let m = this.seen.get(j.f); if (!m) { m = new Map(); this.seen.set(j.f, m); } m.delete(j.i); m.set(j.i, j.t); this.dedupeLines += 1; }
-      for (const m of this.seen.values()) while (m.size > this.dedupeCap) m.delete(m.keys().next().value);
+      // 1.6.0 (v0.54.3, the fifth cold read's #1): every id inside the window is kept, whatever dedupeCap — an identity that comes back
+      // with more than the cap is refused DEDUPE_FULL until enough age out (1.5.0 cut each set to the cap here, whatever the ids' age)
     }
     // Every local action is the hash-checked registry entry — nothing else may be attached locally under its name (fix 1.1.0).
     for (const [name, entry] of registry) {
@@ -94,6 +95,13 @@ class Bus {
       this.dedupeLines = out.length;
     }
   }
+  // 1.6.0: is this identity at dedupeCap inside the window (ids older than the window dropped first, by age only)? → { n, h, retryAfterMs } or null
+  dedupeFull(identity, now) {
+    const mine = this.seen.get(identity); if (!mine) return null;
+    while (mine.size && now - mine.values().next().value >= this.dedupeMs) mine.delete(mine.keys().next().value);
+    if (mine.size < this.dedupeCap) return null;
+    return { n: mine.size, h: Math.round(this.dedupeMs / 3600000 * 100) / 100, retryAfterMs: Math.max(1, mine.values().next().value + this.dedupeMs - now) };
+  }
   remember(map, key, val, cap = 10000) { map.set(key, val); if (map.size > cap) map.delete(map.keys().next().value); }
 
   // A root message from the edge: the identity's kind earns its base label; the caller may only add labels.
@@ -110,9 +118,10 @@ class Bus {
   refuse(env, code, reason, extra = {}) {
     const rec = { id: env && env.id, trace: env && env.trace, replyTo: env && env.replyTo, from: env ? env.from : extra.from, authority: env && env.authority,
       ...(env && env.ctl && env.ctl.length ? { ctl: env.ctl } : {}),
-      action: env ? env.action : extra.action, hops: env && env.hops, labels: env && env.labels, outcome: 'refused', code, reason };
+      action: env ? env.action : extra.action, hops: env && env.hops, labels: env && env.labels, outcome: 'refused', code, reason,
+      ...(extra.transient === true ? { transient: true } : {}), ...(Number.isFinite(extra.retryAfterMs) ? { retryAfterMs: extra.retryAfterMs } : {}) };   // 1.6.0
     try { this.audit(rec); } catch { /* the refusal stands even if the log is unwritable */ }
-    return { ok: false, id: rec.id, trace: rec.trace, action: rec.action, code, error: reason };
+    return { ok: false, id: rec.id, trace: rec.trace, action: rec.action, code, ...(rec.transient ? { transient: true } : {}), ...(rec.retryAfterMs !== undefined ? { retryAfterMs: rec.retryAfterMs } : {}), error: reason };
   }
 
   async dispatch(env, ids = this.ids) {   // 1.4.4 (F04): the identities belong to THIS dispatch, not to the shared bus
@@ -123,13 +132,17 @@ class Bus {
     // credential was built by hand — whatever its replyTo — and is refused
     if (!MINTED.has(env) && env.labels.some((l) => env_.CREDENTIALS.includes(l))) return this.refuse(env, ERR.BAD_ENVELOPE, 'a message the bus did not make may not carry the credential ' + env.labels.filter((l) => env_.CREDENTIALS.includes(l)).join('+'));
     // Duplicates are per SENDING identity and by time (fix 1.1.0): one identity's ids can neither block nor flush another's.
-    // Guarantee: an id is remembered for dedupeMs (default 24 h), up to dedupeCap ids per identity (oldest of THAT identity go first).
+    // Guarantee (1.6.0): an id is remembered for dedupeMs (default 24 h). Nothing is ever dropped by count: an identity that holds
+    // dedupeCap ids (default 50 000) inside the window is refused DEDUPE_FULL (transient) until its oldest leaves it. 1.5.0 dropped the oldest.
     const now = this.clock();
     let mine = this.seen.get(env.from); if (!mine) { mine = new Map(); this.seen.set(env.from, mine); }
     const prev = mine.get(env.id);
     if (prev !== undefined && now - prev < this.dedupeMs) return this.refuse(env, ERR.DUPLICATE, 'message ' + env.id + ' was already received from ' + env.from);
-    mine.delete(env.id); mine.set(env.id, now);
-    while (mine.size > this.dedupeCap || (mine.size && now - mine.values().next().value >= this.dedupeMs)) mine.delete(mine.keys().next().value);
+    while (mine.size && now - mine.values().next().value >= this.dedupeMs) mine.delete(mine.keys().next().value);   // only by age
+    mine.delete(env.id);
+    const full = this.dedupeFull(env.from, now);
+    if (full) return this.refuse(env, ERR.DEDUPE_FULL, env.from + ' has ' + full.n + ' ids inside the ' + full.h + ' h window — none can be forgotten yet; try again later', { transient: true, retryAfterMs: full.retryAfterMs });
+    mine.set(env.id, now);
     try { this.persistSeen(env.from, env.id, now); }   // 1.4.4 (F06): fail closed — an id that cannot be remembered is not run
     catch (e) { mine.delete(env.id); return this.refuse(env, ERR.AUDIT, 'the duplicate-id record is unwritable — nothing was run (' + e.message + ')'); }
     const n = (this.traces.get(env.trace) || 0) + 1; this.remember(this.traces, env.trace, n);
@@ -218,6 +231,10 @@ class Bus {
       },
     });
 
+    // 1.6.0 (v0.54.3): a script whose own identity is at the cap would be refused at its first child call — it is refused
+    // HERE, before anything runs, so a 503 means what it says: the script did not start
+    if (entry.kind === 'script') { const full = this.dedupeFull(actAs, this.clock());
+      if (full) return this.refuse(env, ERR.DEDUPE_FULL, actAs + ', the identity the script ' + env.action + ' runs as, has ' + full.n + ' ids inside the ' + full.h + ' h window — the script was not started; try again later', { transient: true, retryAfterMs: full.retryAfterMs }); }
     const base = { id: env.id, trace: env.trace, replyTo: env.replyTo, from: env.from, authority, action: env.action, version: entry.version, sha256: entry.sha256.slice(0, 12), hops: env.hops, labels: env.labels, ...(env.ctl && env.ctl.length ? { ctl: env.ctl } : {}) };
     try { this.audit({ ...base, outcome: 'run', input: JSON.stringify(env.action === 'email' ? mailInput(env.input) : env.action === 'send' ? sendInput(env.input) : env.input).slice(0, 300) }); }
     catch (e) { return { ok: false, id: env.id, trace: env.trace, action: env.action, code: ERR.AUDIT, error: 'audit log unwritable — nothing was run (' + e.message + ')' }; }
@@ -246,8 +263,9 @@ class Bus {
       const msg = String(e && e.message || e).slice(0, 300);
       // an error message may carry text the action received, so it carries the labels too (fix 1.1.0)
       const labels = [...received, entry.produces].filter((l, i, a) => a.indexOf(l) === i && !isCred(l));   // F-B 1.3.0: an error is no credential
-      try { this.audit({ ...base, outcome: 'error', code, ...(transient ? { transient: true } : {}), reason: msg, labelsOut: labels, ms: this.clock() - t0 }); } catch { /* reported below */ }
-      return { ok: false, id: env.id, trace: env.trace, action: env.action, code, ...(transient ? { transient: true } : {}), error: msg, labels };
+      const after = transient && Number.isFinite(e.retryAfterMs) ? { retryAfterMs: e.retryAfterMs } : {};   // 1.6.0: a script's child refused DEDUPE_FULL
+      try { this.audit({ ...base, outcome: 'error', code, ...(transient ? { transient: true } : {}), ...after, reason: msg, labelsOut: labels, ms: this.clock() - t0 }); } catch { /* reported below */ }
+      return { ok: false, id: env.id, trace: env.trace, action: env.action, code, ...(transient ? { transient: true } : {}), ...after, error: msg, labels };
     }
   }
 }

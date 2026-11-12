@@ -1,4 +1,4 @@
-// engine.js — v1.5.0 · the PROTEUS-K engine: a checked script becomes a registry action · changelog: act/CHANGELOG.md#actproteusenginejs
+// engine.js — v1.5.1 · the PROTEUS-K engine: a checked script becomes a registry action · changelog: act/CHANGELOG.md#actproteusenginejs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // PROTEUS-K script engine: a checked script becomes a registry action (ACTBUS docs/proteus-k.md §7, §8)
@@ -108,6 +108,13 @@ function createEngine({ stateRoot, audit, fuel, daemon, productName } = {}) {   
           const tail = prev.then(() => mine);
           locks.set(ctx.identity, tail);
           await prev;
+          // 1.5.1 (v0.54.3): a child call the bus refused transiently is kept HERE, in this process. The language
+          // has no way to catch an error, so that refusal ended the script. Only when it was the script's FIRST action call can nothing
+          // the script did have happened: then the caller gets its code (503, transient). After an earlier call it stays ACTION_ERROR (422),
+          // whose message names the code — the script did start, and what it did stands. Only the bus's reply, seen here, counts.
+          let childTransient = null, calls = 0;
+          const watch = (r) => { calls += 1; if (calls === 1 && r && r.ok === false && r.transient === true && TRANSIENT.includes(r.code)) childTransient = r; return r; };
+          const asTransient = (err) => { if (childTransient) { err.code = childTransient.code; err.transient = true; if (Number.isFinite(childTransient.retryAfterMs)) err.retryAfterMs = childTransient.retryAfterMs; } return err; };
           try {
             const state = fileState(stateDir(stateRoot), ctx.identity, audit);
             const credWhy = sup ? credPath(ctx) : null;               // 1.3.1 (H2): credentials are tracked per value only in-process
@@ -121,7 +128,7 @@ function createEngine({ stateRoot, audit, fuel, daemon, productName } = {}) {   
                   try { if (audit) audit({ kind: 'daemon-refused', identity: ctx.identity, action: String(action).slice(0, 48) }); } catch { /* the refusal stands */ }
                   return { ok: false, code: 'NOT_PERMITTED', error: 'the script asked for ' + String(action).slice(0, 48) + ', which it does not call in its source (approved reach: ' + (p.calls.join(', ') || 'none') + ')', labels: [] };
                 }
-                return ctx.send(action, inp, { labels: clean(meta && meta.labels), ctl: clean(meta && meta.ctl) });
+                return watch(await ctx.send(action, inp, { labels: clean(meta && meta.labels), ctl: clean(meta && meta.ctl) }));
               };
               try {
                 r = await sup.run(ctx.identity, { src64: p.src64, actions: p.calls, input: input || {}, inputLabels: ctx.labels(), ctl: ctx.ctl ? ctx.ctl() : [],
@@ -130,7 +137,7 @@ function createEngine({ stateRoot, audit, fuel, daemon, productName } = {}) {   
                 if (e.script) ctx.addLabels(clean(e.labels));
                 const out = new Error(e.message);
                 if (e.transient === true && TRANSIENT.includes(e.code)) { out.code = e.code; out.transient = true; }   // 1.4.1: never attempted — not a failure
-                throw out;
+                throw asTransient(out);
               }
               r.labels = clean(r.labels); r.seen = clean(r.seen);
               ctx.addLabels(r.labels); ctx.addLabels(r.seen);
@@ -138,12 +145,12 @@ function createEngine({ stateRoot, audit, fuel, daemon, productName } = {}) {   
               return r.value;
             }
             const r = await run(p.forms, { actions: p.isAction, input: input || {}, inputLabels: ctx.labels(), state, fuel, now: ctx.time,
-              ctl: ctx.ctl ? ctx.ctl() : [], callAction: (action, inp, meta) => ctx.send(action, inp, meta) });
+              ctl: ctx.ctl ? ctx.ctl() : [], callAction: async (action, inp, meta) => watch(await ctx.send(action, inp, meta)) });
             ctx.addLabels(r.labels); ctx.addLabels(r.seen);          // S1: the reply carries what it returns, and all it saw (warnings)
             if (ctx.replyCredentials) ctx.replyCredentials(r.labels); // F-B 1.2.0: and the credentials of the value it returns, only
             return r.value;
           } catch (e) {
-            if (e instanceof ScriptError) { ctx.addLabels(e.labels); throw new Error(e.code + ': ' + e.message); }   // S5
+            if (e instanceof ScriptError) { ctx.addLabels(e.labels); throw asTransient(new Error(e.code + ': ' + e.message)); }   // S5
             throw e;
           } finally {
             release();

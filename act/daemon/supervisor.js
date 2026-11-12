@@ -1,4 +1,4 @@
-// supervisor.js — v1.1.0 · starts, bounds and stops one script daemon per script identity · changelog: act/CHANGELOG.md#actdaemonsupervisorjs
+// supervisor.js — v1.1.1 · starts, bounds and stops one script daemon per script identity · changelog: act/CHANGELOG.md#actdaemonsupervisorjs
 // SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // runs PROTEUS-K scripts in separate daemons (pkd.js), one per script identity (slice 3: ACTBUS docs/capability-architecture.md §7 item 3)
@@ -24,7 +24,7 @@ const { productName: checkProduct } = require('../core/product');
 
 const ACT_DIR = path.join(__dirname, '..');
 // 1.0.4: a refusal of a run that was never attempted — the class the bus, the scheduler and the mailbox treat as "not a failure"
-const TRANSIENT = Object.freeze(['DAEMON_FULL', 'DAEMON_EVICTING', 'DAEMON_OVERLAP', 'DAEMON_PAUSED', 'DAEMON_RESTARTING']);
+const TRANSIENT = Object.freeze(['DAEMON_FULL', 'DAEMON_EVICTING', 'DAEMON_OVERLAP', 'DAEMON_PAUSED', 'DAEMON_RESTARTING', 'DEDUPE_FULL']);   // 1.1.1: + DEDUPE_FULL, the bus's (never thrown here; the engine keeps it from a child call)
 const transient = (code, message) => { const e = new Error(message); e.code = code; e.transient = true; return e; };
 const PKD = path.join(__dirname, 'pkd.js');
 
