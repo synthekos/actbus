@@ -1,4 +1,4 @@
-// scheduler.js — v1.3.0 · triggers: scripts run on a schedule an administrator wrote · changelog: act/CHANGELOG.md#actschedulerjs
+// scheduler.js — v1.3.1 · triggers: scripts run on a schedule an administrator wrote · changelog: act/CHANGELOG.md#actschedulerjs
 // SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // ## Design
@@ -42,6 +42,11 @@ function parseDays(d) {
   return [...new Set(out)].sort();
 }
 // the wall-clock parts of an instant in a time zone
+// 1.3.1 (issue #15): a retry is due at the first tick no more than this before its time. The time is set when the refusal comes back,
+// a few ms after the tick that fired it, and the 15 s timer itself runs a ms or two early or late, so with an exact `now >= at` the
+// second retry (30 s on) fell either side of a tick: 30 s or 45 s after the first, by chance. Half a second of slack makes it 30 s:
+// far more than the few ms measured, and under 1 s, so a tick a whole second before a rung still does not fire it (transient.test.js).
+const RETRY_SLACK_MS = 500;
 const FMT = new Map();                                             // one formatter per zone (building one is the slow part)
 function wall(ms, tz) {
   let f = FMT.get(tz);
@@ -173,7 +178,7 @@ class Scheduler {
         if (this.capped(t.runsAs, now)) { if (now - (this.capLog.get(t.id) || 0) > 3600000) { this.capLog.set(t.id, now); this.log('skip', { id: t.id, why: t.runsAs + ' reached ' + this.perHour + ' fires this hour (' + n + ' waiting)' }); } continue; }
       } else {
       const rt = this.retry.get(t.id);
-      if (rt && now >= rt.at && !this.running.has(t.id)) {           // 1.2.0: the one retry of a transiently refused fire
+      if (rt && now >= rt.at - RETRY_SLACK_MS && !this.running.has(t.id)) {   // 1.2.0: the one retry of a transiently refused fire; 1.3.1: the slack
         this.retry.delete(t.id);
         if (this.state.off[t.id]) { this.log('skip', { id: t.id, why: 'switched off (its retry is dropped)' }); continue; }
         retryOf = rt;

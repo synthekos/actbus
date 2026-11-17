@@ -427,6 +427,17 @@ The `v0.3.6` tree went to a seventh fresh session, scoped to the dedupe and rate
   - **13:** `lab/SEALS.md` gives the kept `r2`'s seal, the command that runs it and its line, and where the old seal is.
   - **14:** the line above this section names the 11 tests.
 
+## 16 Nov: two reads of v0.3.7, and v0.54.5
+
+The `v0.3.7` tag went to two AI sessions from model families other than the one that wrote the code, each on an adversarial brief. Neither is independent: both were briefed by the project.
+- **One finding was a fault, and the project reproduced it.** An identity whose grant for a target-taking action (`fetch`, `email`, `send`, `messages`) had no `targets` field reached no target alone, but in a chain it dropped out of the intersection: `effective()` intersected only the grants that carried `targets`, so a PROTEUS-K script whose own identity listed a host could reach that host for a caller whose grant listed none (issue #18). Fixed in the kernel: `act/core/capabilities.js` 1.1.1 counts an absent field as an empty list. Pinned by `act/test/targets-chain.test.js` 1.0.0, whose two FAIL-FIRST tests fail on `v0.54.4`'s file, on SYNTHEKOS's host machine: one at `effective()` itself, for each of the four actions, and one through a script and the real bus, where no network call is made and the audit records `NO_TARGET`.
+- The same release fixes three open issues and adds two checks; each but #14 is pinned by a test that fails on `v0.54.4`'s files:
+  - **#15:** a refused trigger's second retry came 30 s or 45 s after the first, by a race of milliseconds. `act/scheduler.js` 1.3.1 lets a retry be due at the first tick no more than 500 ms before its time. `act/test/retry-slack.test.js` 1.0.0 drives the scheduler on exact 15 s ticks with the refusal coming back 1 to 250 ms late; `tools/tick-probe.js` runs the case on the real timer.
+  - **#11:** `act/test/shutdown.test.js` counted a zombie as alive, so five tests failed where PID 1 does not collect orphans at once. 1.2.0 counts a zombie as gone, with a test on a real zombie.
+  - **#14:** `dedupeFull()` repeated the age drop its one caller had just made; `act/core/bus.js` 1.7.2 drops the line. No behaviour changes, so no test fails first.
+  - **A mailbox record without a labels list** was delivered with no provenance; `act/mailbox.js` 1.2.2 sets it aside as damaged (`act/test/mailbox-record.test.js` 1.0.0).
+  - **A bus with no audit destination** was built and wrote nowhere; `act/core/bus.js` 1.7.1 refuses to build it (`act/test/bus-audit.test.js` 1.0.0).
+
 ## Index: every bare tag in the kernel, by file
 
 | File | Tag → review |

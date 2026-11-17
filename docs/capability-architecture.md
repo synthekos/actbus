@@ -103,7 +103,7 @@ The script lines in this section are sketches written before PROTEUS-K v0, and t
 Technically this is the **actor model** (as in Erlang or Akka), with some actors backed by a language model. Each failure mode forces a rule:
 1. **Loops and storms** → a hop limit and a trace id in every envelope; per-identity rate limits and trace budgets. Cycles in the static "who may message whom" graph are refused unless explicitly allowed (designed, not built: the code refuses cycles only between script-to-script calls, `act/core/registry.js`).
 2. **Injection travels** (poisoned web text steering an action several hops later; the biggest danger) → model output is *data*, never instructions, at every hop. Every message carries provenance labels, and conditions that fire actions are evaluated by code on typed values. A world action fed by web- or model-labelled input needs an explicit rule or a person.
-3. **Confused deputy** → authority attenuates along a chain. An action triggered through a chain may do only what *every* identity in the chain may do (intersection). This is object-capability discipline.
+3. **Confused deputy** → authority attenuates along a chain. An action triggered through a chain may do only what *every* identity in the chain may do (intersection).
 4. **Errors compound** (about 95 % correct per model hop was measured, so 5 hops is about 77 %) → few model hops, computed conditions and plain data passing. Labels propagate, so the result shows whether *any* step was a model.
 5. **Distributed failure** → message ids with duplicate suppression, timeouts, and supervisors ("let it crash").
 6. **Nobody can see the mesh** → a static graph view, cycle-checked before anything runs, and a live trace. "Explain this outcome" walks the trace back to its cause. (Designed, not built: what exists is the audit log, where every line carries its trace id.)
@@ -141,4 +141,4 @@ Lessons for every later slice:
 - (c) provenance must persist wherever data persists (files, script state), or taint leaks through storage;
 - (d) a synchronous action is a denial-of-service risk unless it bounds its own work.
 
-Prior art: Google DeepMind's CaMeL (arXiv 2503.18813, 2025) puts capabilities and provenance on every value around an untrusted language model. This design reached the same idea independently.
+Prior art: Google DeepMind's CaMeL (arXiv 2503.18813, 2025) puts capabilities and provenance on every value around an untrusted language model.

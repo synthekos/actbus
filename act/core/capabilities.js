@@ -1,9 +1,11 @@
-// capabilities.js — v1.1.0 · who may do what; authority shrinks along a chain · changelog: act/CHANGELOG.md#actcorecapabilitiesjs
+// capabilities.js — v1.1.1 · who may do what; authority shrinks along a chain · changelog: act/CHANGELOG.md#actcorecapabilitiesjs
 // SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // who may do what, and authority that SHRINKS along a chain (ACTBUS docs/capability-architecture.md §1 item 1, §9 item 3)
 // 1.1.0 (ACTBUS docs/proteus-k.md §5): grant flag strictControl — this identity wants rule (a) for this action: a call made under a
 // model/web-labelled condition (ctl) is treated as tainted. If ANY identity in the chain sets it, the chain is strict.
+// 1.1.1 (issue #18): a grant with no targets field counts as an empty list in a chain's intersection, as it does alone — an
+// absent field can no longer drop out of the intersection and let a script's list stand for the caller's.
 // identities.json (admin-written):
 //   { "identities": [ { "name": "dollar-watch", "kind": "euser", "owner": "alex",
 //       "actions": { "fetch": { "targets": ["www.example.com"] }, "file-append": {}, "calc": {} },
@@ -57,7 +59,7 @@ function fromList(list) {
 
 const intersect = (lists) => lists.reduce((acc, l) => acc.filter((x) => l.includes(x)));
 
-// → null (refused) or { targets: [...] | null, allowTainted: bool, strictControl: bool }
+// → null (refused) or { targets: [...], allowTainted: bool, strictControl: bool } — targets is always a list (1.1.1)
 function effective(ids, chain, action) {
   const grants = [];
   for (const name of chain) {
@@ -65,9 +67,8 @@ function effective(ids, chain, action) {
     const g = id.actions[action]; if (!g) return null;
     grants.push(g);
   }
-  const withTargets = grants.filter((g) => g.targets !== undefined);
   return {
-    targets: withTargets.length ? intersect(withTargets.map((g) => g.targets)) : null,
+    targets: intersect(grants.map((g) => g.targets || [])),
     allowTainted: grants.every((g) => g.allowTainted === true),
     strictControl: grants.some((g) => g.strictControl === true),
   };

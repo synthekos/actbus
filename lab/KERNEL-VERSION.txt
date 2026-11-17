@@ -1,4 +1,4 @@
 {
-  "version": "0.54.4",
-  "note": "the kernel is this repo: act.js + act/ at tag v0.3.6 = SYNTHEKOS tag v0.54.4 (a script's child counts against the root caller), byte-identical"
+  "version": "0.54.5",
+  "note": "the kernel is this repo: act.js + act/ at tag v0.3.8 = SYNTHEKOS tag v0.54.5 (an absent targets field restricts a chain, issue #18), byte-identical"
 }

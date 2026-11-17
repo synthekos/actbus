@@ -1,4 +1,4 @@
-// bus.js — v1.7.0 · the message bus: every check in order, then the audit line, then the action · changelog: act/CHANGELOG.md#actcorebusjs
+// bus.js — v1.7.2 · the message bus: every check in order, then the audit line, then the action · changelog: act/CHANGELOG.md#actcorebusjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // ## Design
@@ -51,6 +51,8 @@ class Bus {
   // clock: () => ms · node: this node's name · traceBudget: max messages per trace · fetch: http fetch · filesRoot: folder · outbox: mail/outbox.js (or none: email refuses) · mailbox: mailbox.js (or none)
   // productName: the host's name, given to every action as ctx.product (core/product.js; default ACTBUS)
   constructor({ registry, identities, names, auditFile, audit, clock = Date.now, node = 'local', traceBudget = 64, fetch, filesRoot, outbox, mailbox, dedupeMs = 86400000, dedupeCap = 50000, productName }) {
+    // 1.7.1: no bus without an audit destination — every message is audited before its action runs, so a bus that writes nowhere is refused
+    if (!auditFile && !audit) throw new Error('Bus: an audit destination is required (audit or auditFile)');
     this.product = checkProduct(productName);
     this.registry = registry; this.ids = identities; this.names = names; this.clock = clock; this.node = node;
     this.traceBudget = traceBudget; this.fetchImpl = fetch || globalThis.fetch; this.filesRoot = filesRoot || null; this.outbox = outbox || null; this.mailbox = mailbox || null;
@@ -95,10 +97,10 @@ class Bus {
       this.dedupeLines = out.length;
     }
   }
-  // 1.6.0: is this identity at dedupeCap inside the window (ids older than the window dropped first, by age only)? → { n, h, retryAfterMs } or null
+  // 1.6.0: is this identity at dedupeCap inside the window? → { n, h, retryAfterMs } or null · 1.7.2 (issue #14): its one caller (dispatch)
+  // has just dropped this identity's ids older than the window, with the same `now`, so it no longer drops them again here
   dedupeFull(identity, now) {
     const mine = this.seen.get(identity); if (!mine) return null;
-    while (mine.size && now - mine.values().next().value >= this.dedupeMs) mine.delete(mine.keys().next().value);
     if (mine.size < this.dedupeCap) return null;
     return { n: mine.size, h: Math.round(this.dedupeMs / 3600000 * 100) / 100, retryAfterMs: Math.max(1, mine.values().next().value + this.dedupeMs - now) };
   }

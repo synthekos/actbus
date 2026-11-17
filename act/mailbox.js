@@ -1,4 +1,4 @@
-// mailbox.js — v1.2.1 · mailboxes: identities send each other messages; a waiting message can start a script · changelog: act/CHANGELOG.md#actmailboxjs
+// mailbox.js — v1.2.2 · mailboxes: identities send each other messages; a waiting message can start a script · changelog: act/CHANGELOG.md#actmailboxjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // the core's MAILBOXES: identities send each other messages; a message-triggered script reads them (ACTBUS docs/functions-and-mailboxes.md §3)
@@ -40,7 +40,7 @@ class Mailbox {
     const out = [];
     for (const f of names.filter((x) => /^g-[a-z0-9-]+\.json$/.test(x)).sort()) {
       try { const r = JSON.parse(fs.readFileSync(path.join(d, f), 'utf8'));
-        if (!r || typeof r !== 'object' || Array.isArray(r) || typeof r.id !== 'string' || typeof r.status !== 'string') throw new Error('not a message record');   // 1.1.1
+        if (!r || typeof r !== 'object' || Array.isArray(r) || typeof r.id !== 'string' || typeof r.status !== 'string' || !Array.isArray(r.labels)) throw new Error('not a message record');   // 1.1.1; 1.2.2: a labels list too (send always writes one)
         out.push(r); }
       catch (e) {   // 1.1.0 (M2): moved out of the way ONCE (one line), never read again
         let moved = false; try { const q = path.join(this.dir, '.corrupt'); fs.mkdirSync(q, { recursive: true, mode: 0o700 }); fs.renameSync(path.join(d, f), path.join(q, to + '--' + f)); moved = true; } catch (_) {}

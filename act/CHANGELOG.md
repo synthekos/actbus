@@ -2,6 +2,8 @@
 
 The entries below were moved verbatim from the file headers of `act/**` and `act.js` on 8 Nov 2026 (SYNTHEKOS tag `v0.53.5-changelog`). One section per file; within a section the newest entry is first and the oldest last; review tags (F-B, H1, R4, S3 …) are as they were. Each file keeps its current version on line 1.
 
+**16 Nov 2026 · SYNTHEKOS tag `v0.54.5` · an absent `targets` restricts a chain, and four smaller faults.** In a chain, a grant for a target-taking action with no `targets` field dropped out of the intersection, so a PROTEUS-K script's own targets stood for its caller's (issue #18): `core/capabilities.js` 1.1.1 counts it as an empty list, as it already was alone. The same release: `scheduler.js` 1.3.1 gives a retry half a second of slack, so a refused trigger's second retry comes 30 s after the first, not 30 s or 45 s by a race of milliseconds (#15); `core/bus.js` 1.7.1 refuses to be built without an audit destination, and 1.7.2 drops a line that repeated its one caller's age drop (#14); `mailbox.js` 1.2.2 sets aside a record without a labels list as damaged; `test/shutdown.test.js` 1.2.0 counts a zombie as gone, so its five tests no longer fail where PID 1 does not collect orphans at once (#11). Four test files are new: `targets-chain`, `mailbox-record`, `bus-audit` and `retry-slack`.
+
 **11 Nov 2026 · SYNTHEKOS tag `v0.54.4` · the caller pays.** v0.54.3's cap made a script's `runsAs` identity fill from every caller's calls, so three callers could lock a fourth out of a shared script for up to 24 h, and the rate limit did the same for a minute. Found by the sixth cold read of ACTBUS (its #7); the rate by this release. Now a child the bus makes is not remembered, and it counts against the rate of the caller who caused it. A native action's error is never transient (its #3), and an id of "" or one that is not a string is refused (its #6), never replaced. What v0.54.3 added for scripts at the cap is removed, because no case can reach it once a child is not remembered: the pre-check before a script starts, the engine's child-call path, the `retryAfterMs` a thrown error carried, and DEDUPE_FULL in the two TRANSIENT lists. Tests: `act/test/caller-pays.test.js` 1.0.0 (new), `dedupe-full.test.js` 1.1.0, `transient.test.js` 1.3.0.
 
 **11 Nov 2026 · SYNTHEKOS tag `v0.54.3` · the dedupe window holds.** `core/bus.js` 1.5.0 promised that an id is remembered for 24 h, "up to dedupeCap ids per identity (oldest of THAT identity go first)": at the cap (50 000) an identity's oldest id was dropped whatever its age, on a request (1.5.0 line 132) and when `.dedupe.jsonl` was loaded at start (line 68), so an id inside the window could be replayed. Found by the fifth cold read of ACTBUS (its #1); the start path by this release. Now nothing is ever dropped by count: an identity that holds `dedupeCap` ids inside the window is refused `DEDUPE_FULL` (transient, HTTP 503) until its oldest id leaves the window, and the refusal says when (`retryAfterMs`; `Retry-After` in whole seconds, rounded up, at least 1). A script whose own identity is at the cap is refused `DEDUPE_FULL` before it starts. A script refused at its first action call (another call took the slot after the check) answers `DEDUPE_FULL`, transient; one refused at a later call answers `ACTION_ERROR` naming `DEDUPE_FULL`. A 503 means the script did not start; a 422 naming `DEDUPE_FULL` means it did, and what it did stands. The cost, as a documented limit: at most 50 000 ids per identity in any 24 h (a sustained average of about 35 a minute; a higher grant `rate` is a burst rate); the ids held inside the window take heap memory, bounded per identity by the cap; `dedupeCap` and `dedupeMs` are the bus's constructor options. Tests: `act/test/dedupe-full.test.js` 1.0.0 (11 FAIL-FIRST on v0.54.2, 2 GUARD).
@@ -83,6 +85,8 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/core/bus.js
 
+- v1.7.2 (161126 · v0.54.5, issue #14: `dedupeFull()` no longer drops the identity's ids older than the window; its one caller, dispatch, has just done so with the same `now`)
+- v1.7.1 (161126 · v0.54.5: the constructor refuses a bus with neither `audit` nor `auditFile` — every message is audited before its action runs, so a bus that writes nowhere is not built)
 - v1.7.0 (111126 · v0.54.4, the sixth cold read's #3 and #7: a child the bus made (`ctx.send`) is not remembered and fills no identity's set — its id is a fresh random one nobody can send again; a root message is unchanged. A child counts against the ROOT caller's rate (`authority[0]`), not the identity it is sent as: the caller who caused the work pays for it, and a time trigger, whose root is its `runsAs` identity, pays for its own. 1.6.0's pre-check before a script starts is removed (nothing can fill a script's identity from its calls), and so is the `retryAfterMs` a thrown error carried. `transient` on a thrown error is believed only from a script (the engine); a native action's error is ACTION_ERROR, whatever it carries. TRANSIENT_CODES no longer names DEDUPE_FULL: only a root is refused it, by refuse())
 - v1.6.0 (111126 · v0.54.3, the fifth cold read's #1: nothing is ever dropped by count. At `dedupeCap` ids inside the window a new id is refused DEDUPE_FULL (transient, `retryAfterMs` = when the identity's oldest id leaves the window); the id is not remembered and nothing runs. At start every id inside the window is kept, whatever the cap (1.5.0 cut each set to the cap, on a request and at load). `refuse()` carries `transient` and `retryAfterMs`; a run's transient error keeps the `retryAfterMs` it carries. DEDUPE_FULL is in TRANSIENT_CODES. Before a script runs, its runsAs identity at the cap → DEDUPE_FULL, nothing started; `dedupeFull()` is the one test of both checks)
 - v1.5.0 (081126 · v0.53.6: option productName (checked by core/product.js; default ACTBUS), given to every action as the frozen ctx.product)
@@ -102,6 +106,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/core/capabilities.js
 
+- v1.1.1 (161126 · v0.54.5, issue #18: in `effective()` a grant with no `targets` field counts as an empty list in the chain's intersection, as it does alone; before, it dropped out of the intersection, so another identity's list stood for it. `targets` is now always a list)
 - v1.1.0 (301026)
 
 ## act/core/durable.js
@@ -180,6 +185,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/mailbox.js
 
+- v1.2.2 (161126 · v0.54.5: a record without a `labels` list is not a message record — it is moved to `.corrupt/` once and logged once, like any damaged file; `send` has always written one)
 - v1.2.1 (051126 · review R1 L3: ack removes only messages HELD for a key holder — a message never delivered, or one a script's run has claimed, is left alone; hold() marks a record keyHeld + heldTrace (on disk), a new claim clears heldTrace)
 - v1.2.0 (051126 · v0.53.0 · TENTACLE A1, ACTBUS docs/functions-and-mailboxes.md §5: ACKNOWLEDGEMENT for key holders — hold(trace) ends a run WITHOUT removing what it read: the messages stay claimed until the reader acknowledges them (ack) or claimMs (10 min) passes, then they are delivered again (dead after maxAttempts). ack(to, ids, accept) removes acknowledged messages from the reader's OWN mailbox only, from senders this run may see; an id that is unknown, already gone or dead is ignored (an ack is idempotent). Scripts keep finish() — unchanged)
 - v1.1.1 (041126 review R3: a run that has FINISHED cannot claim again under its trace (a timed-out in-process script kept running); a record that parses but is not a message is treated as damaged; a message marked dead by 1.0.0 (no diedAt) starts its 7 days now; a damaged file that cannot be moved is reported once)
@@ -234,6 +240,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/scheduler.js
 
+- v1.3.1 (161126 · v0.54.5, issue #15: a retry is due at the first tick no more than 500 ms before its time; its time, set when the refusal comes back a few ms after the tick, made the second retry fall either side of the tick 30 s later)
 - v1.3.0 (101126 · v0.54.0: at every start the state gains `loaded: { at, ids }`, the ids of the triggers it loaded — a refused entry is not among them; the list is replaced at each start, never a union — and act/trigger-off.js reads it. load() is unchanged, so an older state file still loads and the next start adds the list. The design comment on the state names `<stateDir>/scheduler.json`, the stateDir act.js passes, and that act.js consumes the files in `.scheduler/off/`)
 - v1.2.0 (061126 TRANSIENT refusals, second-reader review, round 3: a TIME trigger's fire that the kernel refused with transient: true — the run never started — climbs ONE ladder, the same for every code: retry after retryMs[0] (5 s, longer than the supervisor's 2 s grace), then retryMs[1] (30 s), then `lost` — the code is the WHY, in the audit line, not in the schedule. One exception, because it was found end to end: a DAEMON_EVICTING refusal is never the last word — a slot is already being freed for this fire — so if the ladder is spent it gets one more retryMs[0] try, once per fire (at most 4 tries; a busy run that outlasts the first rung makes the 30 s retry the evicting start, and without this the fire was lost). A retry is the same fire: it does not move the trigger's `last`. IN MEMORY: a pending retry lives only in this process. A restart drops it, and that fire is then LOST, not late — its `last` was written when it first went out, so the next fire is the next period; the `missed` policy (skip / run-late) is about periods that fall due while the box is down, as before. Nothing is audited at the restart (there is nothing to audit then). RATE: every try is a fire like any other — it counts once in the scheduler's per-identity fires-per-hour cap and once in the bus's per-identity rate (bus.js, counted before dispatch). At most 4 tries per fire, so it cannot matter; written here so nobody wonders. Any other failure is not retried. A normal fire that comes due first replaces the pending retry (never two). A MESSAGE trigger needs no retry: the run claimed nothing, the messages are still waiting, and the next tick fires again)
 - was v1.1.0 (041126 MESSAGE TRIGGERS, ACTBUS docs/functions-and-mailboxes.md §3: { id, script, runsAs, on: "message", topic } fires when runsAs has waiting messages on that topic (pending(identity, topic) from the core's mailbox); no overlap, the per-identity cap and the switch-off apply; a capped message trigger logs at most once an hour)
@@ -244,6 +251,10 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 - v1.1.0 (061126 · v0.53.5 round 2, second-reader review, round 1: + SIGHUP; a stop() or server that does not exist yet is logged and the stop goes on)
 - was v1.0.0 (061126 · SYNTHEKOS v0.53.5 · second-reader review, round 3 on 0.53.3, ask 2: the server's stop path)
+
+## act/test/bus-audit.test.js
+
+- v1.0.0 (161126 · v0.54.5: a bus with no audit destination is refused at construction — two FAIL-FIRST, two GUARD)
 
 ## act/test/caller-pays.test.js
 
@@ -309,6 +320,10 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 - v1.0.0 (021126)
 
+## act/test/mailbox-record.test.js
+
+- v1.0.0 (161126 · v0.54.5: a record without a labels list is not delivered — three FAIL-FIRST, two GUARD)
+
 ## act/test/mailbox.test.js
 
 - v1.0.1 (061126: the bus tests load BUILT-IN actions only, from a temp copy — an installed script no longer breaks them)
@@ -332,6 +347,10 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 ## act/test/reader.test.js
 
 - v1.0.0 (301026)
+
+## act/test/retry-slack.test.js
+
+- v1.0.0 (161126 · v0.54.5, issue #15: on exact 15 s ticks with the refusal back 1, 3, 17 or 250 ms late, the retries are 15 s and 30 s after the fire — four FAIL-FIRST, two GUARD)
 
 ## act/test/review-fn.test.js
 
@@ -364,6 +383,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/test/shutdown.test.js
 
+- v1.2.0 (161126 · v0.54.5, issue #11: the liveness check counts a zombie as gone, from /proc where there is one, else from ps; a state that cannot be read counts as alive. + a FAIL-FIRST test on a real zombie)
 - v1.1.0 (061126 · v0.53.5 round 2, second-reader review, round 1: + SIGHUP row; + a stop / server that does not exist yet (a real ReferenceError))
 - was v1.0.0 (061126 · SYNTHEKOS v0.53.5 · second-reader review, round 3 on 0.53.3, ask 2)
 
@@ -382,6 +402,10 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 ## act/test/stdlib.test.js
 
 - v1.0.0 (041126)
+
+## act/test/targets-chain.test.js
+
+- v1.0.0 (161126 · v0.54.5, issue #18: an absent targets field restricts a chain as an empty list does — two FAIL-FIRST, five GUARD)
 
 ## act/test/temperature.test.js
 

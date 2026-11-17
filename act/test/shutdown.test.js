@@ -1,4 +1,4 @@
-// shutdown.test.js — v1.1.0 · tests: the stop path stops every script daemon first · changelog: act/CHANGELOG.md#acttestshutdowntestjs
+// shutdown.test.js — v1.2.0 · tests: the stop path stops every script daemon first · changelog: act/CHANGELOG.md#acttestshutdowntestjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // the server's stop path stops every script daemon FIRST.
 // FAIL-FIRST tests fail on 0.53.4 (no act/shutdown.js, server.js has no handler). The real-process tests run test/shutdown-harness.js — a
@@ -11,7 +11,16 @@ const cp = require('child_process'), fs = require('fs'), path = require('path');
 const ROOT = path.join(__dirname, '..');
 const HARNESS = path.join(__dirname, 'shutdown-harness.js');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const alive = (pid) => { try { process.kill(pid, 0); return true; } catch { return false; } };
+// 1.2.0 (issue #11): a zombie (exited, not yet collected by its parent) is gone. Signal 0 succeeds on a zombie, so where PID 1 does
+// not collect orphans at once (a container without an init) a daemon the stop path did kill read as alive, and 5 tests failed.
+// The state comes from /proc where there is one, else from ps (macOS); a state that cannot be read counts as alive, so this can only
+// make a test stricter, never let a live process pass as gone.
+const PROCFS = fs.existsSync('/proc/self/stat');
+const state = (pid) => {
+  if (PROCFS) { try { const s = fs.readFileSync('/proc/' + pid + '/stat', 'utf8'); return s.charAt(s.lastIndexOf(')') + 2); } catch { return ''; } }
+  try { return cp.execFileSync('ps', ['-o', 'stat=', '-p', String(pid)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim().charAt(0); } catch { return ''; }
+};
+const alive = (pid) => { try { process.kill(pid, 0); } catch { return false; } return state(pid) !== 'Z'; };
 const WITHIN_MS = 500;                                            // the bound under test: well under the 3.9 s window it replaces
 
 function start(mode, how) {
@@ -140,4 +149,22 @@ test('FAIL-FIRST server.js wires it: installShutdown late-bound, right after act
   assert.equal(src.split("installShutdown(").length - 1, 1, 'wired exactly once');
   assert.ok(src.includes("console.log('[shutdown] SIGTERM / SIGINT / SIGHUP stop every script daemon first, then the server (act/shutdown.js)');"), 'server.js says so at start (the promote checks the new server printed it)');
   assert.ok(/^\s*function stop\(\) \{ clearInterval\(mbTimer\);.*engine\.close\(\); \}/m.test(fs.readFileSync(path.join(ROOT, '..', 'act.js'), 'utf8')), "act.stop() still ends in engine.close() (the supervisor's synchronous SIGKILL)");
+});
+
+// 1.2.0 (issue #11): the check itself, on a real zombie. `sh` starts a short sleep in the background, prints its pid and replaces itself
+// with a long sleep, which never collects it: the short sleep exits and stays a zombie until the long one ends.
+test('FAIL-FIRST liveness: a zombie is gone, a running process is alive, a pid that has exited and been collected is gone', async () => {
+  const holder = cp.spawn('/bin/sh', ['-c', 'sleep 0.2 & echo $!; exec sleep 30'], { stdio: ['ignore', 'pipe', 'ignore'] });
+  try {
+    const z = await new Promise((res, rej) => { let out = ''; holder.stdout.on('data', (d) => { out += d; if (out.includes('\n')) res(Number(out.trim())); }); holder.on('error', rej); });
+    assert.ok(Number.isInteger(z) && z > 1, 'the background pid: ' + z);
+    assert.equal(alive(z), true, 'the short sleep is running at first');
+    const t0 = Date.now(); while (Date.now() - t0 < 3000 && state(z) !== 'Z') await sleep(20);
+    assert.equal(state(z), 'Z', 'it has exited and is a zombie of the long sleep (state read: ' + JSON.stringify(state(z)) + ')');
+    assert.equal(alive(z), false, 'a zombie is gone');
+    assert.equal(alive(holder.pid), true, 'the long sleep is alive');
+  } finally { holder.kill('SIGKILL'); }
+  await new Promise((r) => (holder.exitCode !== null || holder.signalCode !== null ? r() : holder.once('exit', r)));
+  await sleep(50);
+  assert.equal(alive(holder.pid), false, 'the long sleep, killed and collected by this process, is gone');
 });
