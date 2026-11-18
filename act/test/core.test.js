@@ -1,7 +1,9 @@
-// core.test.js — v1.1.2 · tests: the capability core, one test per rule · changelog: act/CHANGELOG.md#acttestcoretestjs
+// core.test.js — v1.1.3 · tests: the capability core, one test per rule · changelog: act/CHANGELOG.md#acttestcoretestjs
 // SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // capability core: every rule of ACTBUS docs/capability-architecture.md as a test
+// 1.1.3 (P2): the two 'allow-list 1.1.1' tests below, and the comment that introduces them, are bfs2021's, from pull request #19 (commit 975e0a5),
+// taken byte for byte. They pass on ACTBUS v0.3.8 (its fix for issue #18 is the same in effect); they guard it from here on.
 //   node --test test/      (Node 18+; no dependencies)
 'use strict';
 const test = require('node:test');
@@ -358,6 +360,37 @@ test('fetch: hosts are the INTERSECTION over the chain — alex lacks evil.examp
   const { bus } = makeBus();
   assert.match((await bus.ask('alex', 'fetch', { url: 'https://evil.example/' })).error, /not on the allow-list/);
   assert.equal((await bus.ask('bot', 'fetch', { url: 'https://evil.example/' })).ok, true);
+});
+// ---------------------------------------------------------------- capabilities 1.1.1 (issue #18): an ABSENT targets field is no targets
+// These FAIL on capabilities 1.1.0: there a grant with no targets field dropped out of a chain's intersection, so a caller that
+// omits targets inherited the other identities' hosts through an action that runs as one who lists them (alone, the same
+// grant reached nothing: effective() answered null for a chain with no targets field at all).
+test('allow-list 1.1.1: a grant that OMITS targets does not drop out of a chain — effective() intersects it as an empty list', () => {
+  const ids = caps.fromList([
+    { name: 'alex', kind: 'person', owner: 'alex', actions: {} },
+    { name: 'caller', kind: 'euser', owner: 'alex', actions: { fetch: {} } },
+    { name: 'empty', kind: 'euser', owner: 'alex', actions: { fetch: { targets: [] } } },
+    { name: 'svc', kind: 'euser', owner: 'alex', actions: { fetch: { targets: ['rates.example'] } } },
+  ]);
+  assert.deepEqual(caps.effective(ids, ['caller'], 'fetch').targets, [], 'alone: the caller reaches nothing');
+  assert.deepEqual(caps.effective(ids, ['caller', 'svc'], 'fetch').targets, [], 'in a chain: the caller still reaches nothing');
+  assert.deepEqual(caps.effective(ids, ['empty', 'svc'], 'fetch').targets, [], 'an explicit empty list still empties the chain');
+  assert.deepEqual(caps.effective(ids, ['svc'], 'fetch').targets, ['rates.example'], 'a grant that lists targets is untouched');
+});
+test('allow-list 1.1.1: a caller that omits targets cannot reach a host through an action that runs as one who lists it', async () => {
+  const extraSpec = [{ ...SPEC.find((e) => e.name === 'fetch'), name: 'fetchsvc', runsAs: 'svc' }];
+  const ids = [{ name: 'alex', kind: 'person', owner: 'alex', actions: {} },
+    { name: 'caller', kind: 'euser', owner: 'alex', actions: { fetchsvc: {}, fetch: {} } },
+    { name: 'svc', kind: 'euser', owner: 'alex', actions: { fetchsvc: { targets: ['rates.example'] }, fetch: { targets: ['rates.example'] } } }];
+  const seen = [];
+  const { bus, lines } = makeBus({ ids, extraSpec, fetch: fakeFetch({ 'rates.example': 'ok' }, seen) });
+  const r = await bus.ask('caller', 'fetchsvc', { url: 'https://rates.example/' });
+  assert.equal(r.ok, false); assert.equal(r.code, ERR.NO_TARGET); assert.match(r.error, /rates\.example is not on the allow-list for caller → svc/);
+  assert.ok(!lines.some((l) => l.id === r.id && l.outcome === 'run'), 'fetchsvc was started');
+  assert.equal(seen.length, 0, 'a request left the box');
+  assert.equal((await bus.ask('caller', 'fetch', { url: 'https://rates.example/' })).code, ERR.NO_TARGET, 'alone, the same caller was already refused');
+  const ok = await bus.ask('svc', 'fetch', { url: 'https://rates.example/' });   // the identity that lists the host keeps it
+  assert.equal(ok.ok, true, JSON.stringify(ok));
 });
 test('file: own folder only — no "..", no hidden names, no folders, no symlinks', async () => {
   const { bus } = makeBus();

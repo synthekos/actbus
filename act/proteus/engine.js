@@ -1,4 +1,4 @@
-// engine.js — v1.6.0 · the PROTEUS-K engine: a checked script becomes a registry action · changelog: act/CHANGELOG.md#actproteusenginejs
+// engine.js — v1.6.2 · the PROTEUS-K engine: a checked script becomes a registry action · changelog: act/CHANGELOG.md#actproteusenginejs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // PROTEUS-K script engine: a checked script becomes a registry action (ACTBUS docs/proteus-k.md §7, §8)
@@ -8,7 +8,7 @@
 // OR comes after anything the script read (a fail or an action error on that data could have stopped the script).
 // createEngine({ stateRoot, audit, fuel }) → { prepare, impl } — passed to the registry: load(dir, file, { scriptEngine }).
 //   prepare(bytes, entry, isAction) reads and checks the source (refused at load if anything is wrong) and returns what it
-//     can reach: calls (action names), targets (literal URLs and file names written in the source), warnings.
+//     can reach: calls (action names), targets (literal URLs, file names and recipients written in the source), warnings.
 //   impl(prepared, entry) → { run(input, ctx) } — the bus calls it like any action. The script's calls go through
 //     ctx.send with each value's own labels and ctl (bus 1.2.0, kind script). Runs of one script are serialised (its state
 //     has one writer). State: <stateRoot>/.pk-state/s-<identity>/state.json (state.js; 1.2.1).
@@ -35,7 +35,8 @@ function stateDir(root) {
 const BRANCHING = new Set(['if', 'when', 'unless', 'and', 'or', 'for-each', 'define']);   // 1.4.0: + define
 const READERS = new Set(['remembered', 'input']);
 
-// walk: action calls, whether each sits inside a condition/loop, and literal targets (:url / :name strings)
+// walk: action calls, whether each sits inside a condition/loop, and literal targets (:url / :name / :to strings)
+// 1.6.2 (B5, ACTBUS docs/proteus-k.md): `:to` too — the recipient of send and email — so the reach list an approver reads names every literal target
 function survey(forms) {
   const calls = [], targets = new Set();
   const walk = (n, branched) => {
@@ -46,7 +47,7 @@ function survey(forms) {
     // as the evaluator runs it: the condition / first operand / loop header OUTSIDE, the branches and the body INSIDE
     const firstOutside = BRANCHING.has(h);
     for (let i = 0; i < a.length; i++) {
-      if (a[i].t === 'kw' && (a[i].v === 'url' || a[i].v === 'name') && a[i + 1] && a[i + 1].t === 'str') targets.add(a[i].v + ':' + a[i + 1].v);
+      if (a[i].t === 'kw' && (a[i].v === 'url' || a[i].v === 'name' || a[i].v === 'to') && a[i + 1] && a[i + 1].t === 'str') targets.add(a[i].v + ':' + a[i + 1].v);
       walk(a[i], branched || (firstOutside && i > 0));
     }
     calls.push({ name: h, branched, line: n.items[0].line });      // after its arguments: evaluation order (1.1.0)
@@ -117,7 +118,10 @@ function createEngine({ stateRoot, audit, fuel, daemon, productName } = {}) {   
             if (sup && !credWhy) {                                     // slice 3: the daemon runs it; this process keeps every decision
               let r;
               const snap = state.snapshot();
-              const clean = (ls) => (Array.isArray(ls) ? ls : []).filter((l) => KNOWN.includes(l) && !CRED.includes(l));   // H2: known labels, no credential
+              // H2: known labels, no credential. 1.6.1 (C1): the supervisor (1.2.0) now refuses every label list from the daemon that is not a list
+              // of known labels, so the one job left here is to drop a credential. Nothing reaches the `: []` branch or the KNOWN filter; both stay
+              // as defence in depth. They would hide a regression in the supervisor's check, so daemon-message.test.js tests the refusals through this engine.
+              const clean = (ls) => (Array.isArray(ls) ? ls : []).filter((l) => KNOWN.includes(l) && !CRED.includes(l));
               const send = async (action, inp, meta) => {
                 if (!p.calls.includes(action)) {                         // H2: outside the reach the admin approved (registry survey)
                   try { if (audit) audit({ kind: 'daemon-refused', identity: ctx.identity, action: String(action).slice(0, 48) }); } catch { /* the refusal stands */ }

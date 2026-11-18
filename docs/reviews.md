@@ -438,6 +438,15 @@ The `v0.3.7` tag went to two AI sessions from model families other than the one 
   - **A mailbox record without a labels list** was delivered with no provenance; `act/mailbox.js` 1.2.2 sets it aside as damaged (`act/test/mailbox-record.test.js` 1.0.0).
   - **A bus with no audit destination** was built and wrote nowhere; `act/core/bus.js` 1.7.1 refuses to build it (`act/test/bus-audit.test.js` 1.0.0).
 
+## 17 Nov: v0.54.6, three held-over checks and pull request #19
+
+Three of this release's four kernel changes were found by the project's review of the `v0.3.8` release, an AI session, which placed them in the next kernel release; the fourth was promised when pull request #19 was closed. Each change is pinned by tests that fail on `v0.54.5`'s files, on SYNTHEKOS's host machine. One correction: `v0.3.8`'s README gave `v0.54.4`'s lab fingerprint, `e69cd45a00e3`, as the one for the code here, where `v0.54.5`'s was `0d229e8751eb`; `v0.3.9` gives its own, `0d9b1016e7f7`, and its release run checks that line against the lab.
+- **P1, an empty chain.** `act/core/capabilities.js` 1.1.2: `effective()` returns `null` for an empty chain, and `modelsFor()` returns `[]`. Before, both reached `[].reduce()` with no start value and were closed only by the TypeError it throws (`act/test/empty-chain.test.js` 1.0.0).
+- **P2, pull request #19.** `bfs2021` opened it on `v0.3.7` to fix issue #18 the same way `v0.3.8` did; it was closed, not merged. Its two tests are in `act/test/core.test.js` 1.1.3, byte for byte as `bfs2021` wrote them. They pass on `v0.3.8`, so they are not FAIL-FIRST: they guard the fix from here on. `act/CHANGELOG.md` credits them.
+- **C1, a daemon's label lists.** `act/daemon/supervisor.js` 1.2.0: every label list a script daemon sends (a call's `labels` and `ctl`, a state write's `labels`, a finished run's `labels` and `seen`, a script error's `labels`) must be a list of known labels. Anything else is audited as `daemon-malformed` and refused: a call is answered `BAD_MESSAGE` and does not run, and a state write or the end of a run fails the run (`docs/host.md`). Before, it became `[]`. The daemon runs the kernel's own code, so this guards against a faulty daemon; a compromised one could already send an empty list. `act/test/daemon-message.test.js` 1.0.0 drives the real supervisor and engine with a stand-in daemon; `act/test/review-s3.test.js` 1.0.4 changes two H2 tests that pinned the old mapping.
+- **C4, the mailbox's filters.** `act/mailbox.js` 1.3.0: `read` needs both its filters and `ack` its one, and a missing one throws. Before, they defaulted to `() => true`, and `own` to `accept`, so a caller that passed a narrow `accept` alone marked as dead a sender it still accepted. The bus, the kernel's only caller, always passed them. `act/test/required-filters.test.js` 1.0.0; the tests that relied on the defaults now pass filters (`mailbox.test.js`, `mailbox-record.test.js`, `transient.test.js`).
+- **B5, `:to` in the reach list.** `act/proteus/engine.js` 1.6.2 lists a literal `:to`, the recipient of `send` and `email`, with `:url` and `:name`, so the reach list an approver reads names every literal target. The second review of the mailboxes (R2) had accepted its absence as L3 (`docs/functions-and-mailboxes.md`). Pinned in `required-filters.test.js`.
+
 ## Index: every bare tag in the kernel, by file
 
 | File | Tag → review |
@@ -446,26 +455,31 @@ The `v0.3.7` tag went to two AI sessions from model families other than the one 
 | `act/core/bus.js` | F04, F05, F06 → 5 Nov 2026 · M3 → R2 · S4 → 30 Oct self-review · "the fifth cold read's #1" → 11 Nov, v0.54.3, and 11 Nov, the cold read of v0.3.4 · "the sixth cold read's #3", "#7" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 |
 | `act/core/envelope.js` | "the sixth cold read's #6" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 |
 | `act/core/targets.js` | round 2 → v0.53.2 |
+| `act/core/capabilities.js` | P1 → 17 Nov, v0.54.6 |
 | `act/core/registry.js` | C1/C2 → 5 Nov third check · N1 → 11 Nov, v0.54.2 |
 | `act/actions/fetch.js` | F09 → 5 Nov 2026 |
 | `act/actions/file.js` | "adversarial review" → 28 Oct core, finding 4 |
-| `act/mailbox.js` | M1, M2, M3, L2, L5 → R2 · L3 → 5 Nov R1 |
+| `act/mailbox.js` | M1, M2, M3, L2, L5 → R2 · L3 → 5 Nov R1 · C4 → 17 Nov, v0.54.6 |
 | `act/scheduler.js` | M3, L2 → R-S3 |
-| `act/daemon/supervisor.js` | H1, L1 → R-S3 · round 1, round 2 → v0.53.3 |
+| `act/daemon/supervisor.js` | H1, L1 → R-S3 · round 1, round 2 → v0.53.3 · C1 → 17 Nov, v0.54.6 |
 | `act/mail/outbox.js` | M1, M2 → R-S3 |
-| `act/proteus/engine.js` | S1, S3, S4, S5 → 30 Oct self-review · H2 → R-S3 |
+| `act/proteus/engine.js` | S1, S3, S4, S5 → 30 Oct self-review · H2 → R-S3 · B5, C1 → 17 Nov, v0.54.6 |
 | `act/proteus/eval.js` | S2, S2b, S4 → 30 Oct self-review · R1 → 2 Nov invariant tests · F-A, F-B, finding 1 → 2 Nov PROTEUS-K review · review F2, F3, F5, F6, F7 and round 3 → 3 Nov F-B rounds · U1, C1, C2 → R-fn |
-| `act/test/core.test.js` | REVIEW 1–6, REVIEW hardening → 28 Oct core |
+| `act/test/core.test.js` | REVIEW 1–6, REVIEW hardening → 28 Oct core · P2 → 17 Nov, v0.54.6 |
 | `act/test/selfreview.test.js`, `eval.test.js` | S1–S6 → 30 Oct self-review |
 | `act/test/invariants.test.js` | R1 → 2 Nov invariant tests |
 | `act/test/size.test.js`, `size-collect.test.js` | F-A → 2 Nov PROTEUS-K review |
 | `act/test/credentials*.test.js`, `collect.test.js`, `the.test.js`, `script.test.js` | F-B, finding 1 → 2 Nov · review 2, F2–F7, review 3, round 3, UNSAFE 2, focused review → 3 Nov F-B rounds |
-| `act/test/review-s3.test.js` | H1, H2, M1, M2, M3, L1, L2 → R-S3 |
+| `act/test/review-s3.test.js` | H1, H2, M1, M2, M3, L1, L2 → R-S3 · C1 → 17 Nov, v0.54.6 |
 | `act/test/review-fn.test.js` | U1, C1, C2 → R-fn |
-| `act/test/mailbox.test.js` | R2, R3 → 4 Nov mailbox reviews · "a blocker" → v0.53.2 round 1 |
+| `act/test/mailbox.test.js` | R2, R3 → 4 Nov mailbox reviews · "a blocker" → v0.53.2 round 1 · C4 → 17 Nov, v0.54.6 |
+| `act/test/mailbox-record.test.js` | C4 → 17 Nov, v0.54.6 |
+| `act/test/required-filters.test.js` | C4, B5 → 17 Nov, v0.54.6 |
+| `act/test/empty-chain.test.js` | P1 → 17 Nov, v0.54.6 |
+| `act/test/daemon-message.test.js` | C1 → 17 Nov, v0.54.6 |
 | `act/test/make-registry.test.js` | "the fourth cold read's #1", "cold read v0.3.3 #1" → 11 Nov, v0.54.2, and 11 Nov, the cold read of v0.3.3 |
 | `act/test/caller-pays.test.js` | "the sixth cold read's #7" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 |
 | `act/test/dedupe-full.test.js` | "the fifth cold read's #1" → 11 Nov, v0.54.3, and 11 Nov, the cold read of v0.3.4 · "the sixth cold read's #6" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 · M14 → the lab's mutation M14 (`lab/mutations/`) |
 | `act/test/p0.test.js` | F04, F05, F06 → 5 Nov 2026 |
 | `act/test/daemon.test.js` | round 1, round 2 → v0.53.3 |
-| `act/test/transient.test.js` | round 1 → v0.53.4 · "the sixth cold read's #3" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 |
+| `act/test/transient.test.js` | round 1 → v0.53.4 · "the sixth cold read's #3" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 · C4 → 17 Nov, v0.54.6 |

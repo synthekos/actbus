@@ -1,4 +1,4 @@
-// capabilities.js — v1.1.1 · who may do what; authority shrinks along a chain · changelog: act/CHANGELOG.md#actcorecapabilitiesjs
+// capabilities.js — v1.1.2 · who may do what; authority shrinks along a chain · changelog: act/CHANGELOG.md#actcorecapabilitiesjs
 // SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // who may do what, and authority that SHRINKS along a chain (ACTBUS docs/capability-architecture.md §1 item 1, §9 item 3)
@@ -6,6 +6,8 @@
 // model/web-labelled condition (ctl) is treated as tainted. If ANY identity in the chain sets it, the chain is strict.
 // 1.1.1 (issue #18): a grant with no targets field counts as an empty list in a chain's intersection, as it does alone — an
 // absent field can no longer drop out of the intersection and let a script's list stand for the caller's.
+// 1.1.2 (P1, the comment closing pull request #19 by bfs2021): an empty chain is refused on purpose — effective() returns null and
+// modelsFor() returns [] for it. Before, both reached intersect([]), and only [].reduce()'s TypeError kept them closed.
 // identities.json (admin-written):
 //   { "identities": [ { "name": "dollar-watch", "kind": "euser", "owner": "alex",
 //       "actions": { "fetch": { "targets": ["www.example.com"] }, "file-append": {}, "calc": {} },
@@ -67,13 +69,14 @@ function effective(ids, chain, action) {
     const g = id.actions[action]; if (!g) return null;
     grants.push(g);
   }
+  if (!grants.length) return null;                                  // 1.1.2: an empty chain holds no grant — on purpose
   return {
     targets: intersect(grants.map((g) => g.targets || [])),
     allowTainted: grants.every((g) => g.allowTainted === true),
     strictControl: grants.some((g) => g.strictControl === true),
   };
 }
-const modelsFor = (ids, chain) => intersect(chain.map((n) => (ids.get(n) ? ids.get(n).models : [])));
+const modelsFor = (ids, chain) => (chain.length ? intersect(chain.map((n) => (ids.get(n) ? ids.get(n).models : []))) : []);   // 1.1.2: empty chain → no models
 const missing = (ids, chain, action) => chain.filter((n) => !ids.get(n) || !ids.get(n).actions[action]);
 
 module.exports = { load, fromList, effective, modelsFor, missing, KIND_LABEL, KINDS };

@@ -11,7 +11,7 @@ bd4244d7359abdd8643c568c2fcfd55069445d59ee4f05893d39e4c88389ed2d  ./act/actions/
 fcd3eea9ada8d04247f159ddb858397a4797245fb9214caa1de940ea7d8adc33  ./act/actions/send.js
 36105619c4b008eabf91cbc75b583f05e2201e76427fda55edae9842ba335da0  ./act/actions/units.js
 80f865a4ddf1f35bb089cad8ba5457a7f257509fbe245dcb99b444db08492abb  ./act/core/bus.js
-5de2f5a034b504b705b22b682a1ed5569baf3e42ac2bd635e8eb0cd62ce006d7  ./act/core/capabilities.js
+461dbe1f65d4d02c81445da6eeccafde4b3a8354c716a434c1ea0a46ab2ed329  ./act/core/capabilities.js
 dc629652fea343aea9670050603e980b9f650b4f4a67ef9def2edeedee8cda19  ./act/core/durable.js
 ab91de8ea0979355629276ed4ce36c77169732a2c22e6f6da5b9168141fc4848  ./act/core/edge.js
 31b923f5b9a91113b7ad6ee01ae4026ca7d2de23bb0552f7909bb8b9e67c1826  ./act/core/envelope.js
@@ -21,12 +21,12 @@ c4086168ff575ffa083f4bbb77eb329bbdc22f4adbff8ee5f1a53d183e73cd1e  ./act/core/rat
 2a4c5aede4da29a49b1c117df465fea953c5e015ef1ee3ddcaa04a5a125bfcbb  ./act/core/registry.js
 a3f06e15c3d1575231fb091657023d79d876fc382dff7b8ea58594759e1201ca  ./act/core/targets.js
 0a4cf05bb265d5bea3eb3f1198cc0d84949b065051554806aba72a4e98b035d7  ./act/daemon/pkd.js
-84f04eb6dd0d2da35470dcd3f484a7611be30a7f9d44704f9d2ed5ddfd23ced2  ./act/daemon/supervisor.js
+59f936d55c03f7beb8edb7e9efe62d32e2aee5d87b92e0f8bd01e10b5d30ea94  ./act/daemon/supervisor.js
 938c9b586effd5da1da29188d68ab897af660a82e5d138dff0ce34859b335be8  ./act/mail/outbox.js
 53e24aac36ed0eb615bf0d843582df86fa0c84ad1edd6c9419f693d5d146f82f  ./act/mail/smtp.js
-463a39cc3e9079646dd0a99f35b4f290f54221ba2988fb3c43d0a3035f0779eb  ./act/mailbox.js
+e2350b843a9373c9c6cc995a3684316c0683517d21ec21d2b9e9712c5b23ef91  ./act/mailbox.js
 09aa9983a46d06c3e667293d205e1e59bbb2d3d9c63379945438c88e495d57ac  ./act/make-registry.js
-655d24a72a5905d1d2088e73f49f4d4a3409ed77215f3572acb07530c9906233  ./act/proteus/engine.js
+21433e81134481c79891d6df9bcec3fb29dba1d752d399d73db4d7b3c8fe508d  ./act/proteus/engine.js
 609353c5d245667e6b20f3f2911f4146d86c01913981a3c6a5e907fef0fa1229  ./act/proteus/eval.js
 7fafdeaf3e47aaaeb82874b7aca3c3b1aeec3d2c5403c770f48f37f8461815bb  ./act/proteus/rational.js
 23f0500148f91c45e18c5ca6bafac241c5d39f61b8af1de2a4b884a6c6b0460f  ./act/proteus/reader.js

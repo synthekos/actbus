@@ -1,4 +1,4 @@
-// mailbox.js — v1.2.2 · mailboxes: identities send each other messages; a waiting message can start a script · changelog: act/CHANGELOG.md#actmailboxjs
+// mailbox.js — v1.3.0 · mailboxes: identities send each other messages; a waiting message can start a script · changelog: act/CHANGELOG.md#actmailboxjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // the core's MAILBOXES: identities send each other messages; a message-triggered script reads them (ACTBUS docs/functions-and-mailboxes.md §3)
@@ -95,7 +95,10 @@ class Mailbox {
   pending(to, topic) { return this.records(to).filter((r) => r.status === 'new' && (!topic || r.topic === topic)).length; }
   // reading — claims up to perRead waiting messages for this run. own(from) = the RECIPIENT's current rule: a sender it no longer accepts
   // → dead. accept(from) = what THIS run may see (its grant intersected along the chain — maybe narrower): not accepted → left waiting.
-  read(to, topic, trace, accept = () => true, own = accept) {
+  // 1.3.0 (C4): both filters are REQUIRED. The defaults were open (accept = () => true) and destructive (own = accept: a caller that
+  // passed a narrow accept and forgot own marked a sender the recipient still accepts DEAD, for good). The bus always passes both.
+  read(to, topic, trace, accept, own) {
+    if (typeof accept !== 'function' || typeof own !== 'function') throw new Error('read needs two filters: accept(from) for this run and own(from) for the recipient (mailbox 1.3.0)');
     if (!NAME.test(String(topic))) throw new Error('a topic is a name (a-z, 0-9, -)');
     if (trace && this.ended.has(trace)) throw new Error('this run has already ended — it cannot read messages any more');   // 1.1.1
     const out = [], now = this.clock();
@@ -142,7 +145,8 @@ class Mailbox {
   }
   // 1.2.0: the reader acknowledges ids it has: each one still in ITS mailbox (claimed by any run, or waiting again after a lost ack),
   // from a sender accept(from) allows, is removed — 'done' line FIRST (no line, kept). Returns how many were removed.
-  ack(to, ids, accept = () => true) {
+  ack(to, ids, accept) {                                            // 1.3.0 (C4): the filter is REQUIRED (it was open: () => true)
+    if (typeof accept !== 'function') throw new Error('ack needs a filter: accept(from) for this run (mailbox 1.3.0)');
     if (!Array.isArray(ids)) throw new Error('ack is a list of message ids');
     if (ids.length > this.perRead * 5) throw new Error('at most ' + (this.perRead * 5) + ' ids per ack');
     const want = new Set();

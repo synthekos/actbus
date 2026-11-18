@@ -1,8 +1,11 @@
-// review-s3.test.js — v1.0.3 · tests: one per finding of the second-reader review of daemons, triggers and mail (R-S3) · changelog: act/CHANGELOG.md#acttestreview-s3testjs
+// review-s3.test.js — v1.0.4 · tests: one per finding of the second-reader review of daemons, triggers and mail (R-S3) · changelog: act/CHANGELOG.md#acttestreview-s3testjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // slice 3 second-reader review: one test per confirmed finding (H1 H2 M1 M2 M3 L1 L2 + "every" never
 // fires). Every test FAILS on the pre-review code (supervisor 1.0.0, engine 1.3.0, state 1.1.0, outbox 1.0.0, scheduler 1.0.0).
 // Run: node --test test/review-s3.test.js
+// 1.0.4 (C1, supervisor 1.2.0): two H2 tests pinned the old mapping of a daemon's bad label lists. A label that is not known (`nonsense`)
+// and a state-set whose labels are not a list (`'zz'`) are now refused, not cleaned: the first fails the run, the second fails it and
+// writes nothing. What H2 proves is unchanged: no junk reaches a reply or the state, and a credential is still dropped, not refused.
 'use strict';
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -79,8 +82,11 @@ test('H2: a daemon cannot mint a credential — `grounded` on its reply or its c
     const run = w.audit.find((x) => x.action === 'calc' && x.outcome === 'run');
     assert.ok(run && !run.labels.includes('grounded'), JSON.stringify(run));
   } finally { w.engine.close(); }
-  const d = world('"x"', { fake: FAKE("(m) => process.send({ t: 'done', runId: m.runId, ok: true, value: 'v', labels: ['person', 'grounded', 'nonsense'], seen: ['grounded'] })") });
-  try { const r = await d.ask(); assert.equal(r.ok, true); assert.ok(!r.labels.includes('grounded') && !r.labels.includes('nonsense'), r.labels.join()); } finally { d.engine.close(); }
+  const d = world('"x"', { fake: FAKE("(m) => process.send({ t: 'done', runId: m.runId, ok: true, value: 'v', labels: ['person', 'grounded'], seen: ['grounded'] })") });
+  try { const r = await d.ask(); assert.equal(r.ok, true); assert.ok(!r.labels.includes('grounded'), r.labels.join()); } finally { d.engine.close(); }
+  // 1.0.4 (C1): a label that is not known is no longer dropped quietly — the end message is refused, and no junk reaches the reply
+  const e = world('"x"', { fake: FAKE("(m) => process.send({ t: 'done', runId: m.runId, ok: true, value: 'v', labels: ['person', 'grounded', 'nonsense'], seen: ['grounded'] })") });
+  try { const r = await e.ask(); assert.equal(r.ok, false, JSON.stringify(r)); assert.match(r.error, /BAD_MESSAGE/); assert.ok(!r.labels.includes('grounded') && !r.labels.includes('nonsense'), r.labels.join()); } finally { e.engine.close(); }
 });
 
 test('H2 (focused re-check): a daemon cannot re-mint `grounded` from an unrelated grounded state key', async () => {
@@ -116,13 +122,18 @@ test('H2: a script that can reach an action PRODUCING `grounded` runs in-process
 });
 
 test('H2: junk state labels from a daemon cannot poison the identity\'s state (the next run still works)', async () => {
-  const w = world('"x"', { fake: FAKE("(m) => { process.send({ t: 'state-set', runId: m.runId, key: 'k', value: 1, labels: 'zz' }); process.send({ t: 'done', runId: m.runId, ok: true, value: 'v', labels: ['person'], seen: [] }); }") });
+  // 1.0.4 (C1): the first run sends the junk list, the second a good one
+  const w = world('"x"', { fake: FAKE("(m) => { globalThis.n = (globalThis.n || 0) + 1; process.send({ t: 'state-set', runId: m.runId, key: 'k', value: 1, labels: globalThis.n === 1 ? 'zz' : ['person'] }); process.send({ t: 'done', runId: m.runId, ok: true, value: 'v', labels: ['person'], seen: [] }); }") });
   try {
-    await w.ask();
+    const first = await w.ask();                                   // 1.0.4 (C1): the junk list is refused — the run fails and writes nothing
+    assert.equal(first.ok, false, JSON.stringify(first)); assert.match(first.error, /BAD_MESSAGE/);
+    const f = path.join(w.box, '.pk-state', 's-s', 'state.json');
+    assert.ok(!fs.existsSync(f) || !JSON.parse(fs.readFileSync(f, 'utf8')).keys.k, 'nothing was written for k');
+    assert.ok(w.audit.some((x) => x.kind === 'daemon-malformed' && x.t === 'state-set'), 'the refusal is audited');
     const again = await w.ask();
     assert.equal(again.ok, true, JSON.stringify(again));
-    const st = JSON.parse(fs.readFileSync(path.join(w.box, '.pk-state', 's-s', 'state.json'), 'utf8'));
-    assert.ok(st.keys.k.labels.every((l) => ['person', 'device', 'computed', 'grounded', 'model', 'web'].includes(l)), JSON.stringify(st.keys.k));
+    const st = JSON.parse(fs.readFileSync(f, 'utf8'));
+    assert.deepEqual(st.keys.k.labels, ['person'], JSON.stringify(st.keys.k));
   } finally { w.engine.close(); }
 });
 

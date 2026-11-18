@@ -1,4 +1,5 @@
-// transient.test.js — v1.3.0 · tests: transient refusals, through every site they pass · changelog: act/CHANGELOG.md#acttesttransienttestjs
+// transient.test.js — v1.3.1 · tests: transient refusals, through every site they pass · changelog: act/CHANGELOG.md#acttesttransienttestjs
+// 1.3.1 (C4, mailbox 1.3.0): read's two filters are required; the one direct read passes what the defaults gave, () => true for both.
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // One rule, the sites it passes through: supervisor (sets it) → engine (keeps it) → bus (code + transient: true, reply AND audit) →
 // edge (503) → scheduler (a time trigger retries once, then `lost`) · and the mailbox, which needs no change (a refused run claimed
@@ -221,7 +222,7 @@ test('GUARD mailbox: a run refused before it started claimed nothing — the mes
   mb.finish('trace-refused', false);                              // what act.js does when the triggered run is refused DAEMON_FULL
   let m = mb.list('b')[0];
   assert.equal(m.status, 'new'); assert.equal(m.attempts, 0, 'a refused run spent no attempt');
-  mb.read('b', 't', 'trace-ran'); mb.finish('trace-ran', false);   // a run that read it, then failed
+  mb.read('b', 't', 'trace-ran', () => true, () => true); mb.finish('trace-ran', false);   // a run that read it, then failed
   m = mb.list('b')[0];
   assert.equal(m.attempts, 1, 'a run that was attempted and failed spends one');
 });

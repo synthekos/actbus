@@ -1,4 +1,4 @@
 {
-  "version": "0.54.5",
-  "note": "the kernel is this repo: act.js + act/ at tag v0.3.8 = SYNTHEKOS tag v0.54.5 (an absent targets field restricts a chain, issue #18), byte-identical"
+  "version": "0.54.6",
+  "note": "the kernel is this repo: act.js + act/ at tag v0.3.9 = SYNTHEKOS tag v0.54.6 (an empty chain refused on purpose, a daemon's bad label lists refused, the mailbox's filters required, a literal :to in the reach list), byte-identical"
 }

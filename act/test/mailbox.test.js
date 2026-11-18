@@ -1,4 +1,6 @@
-// mailbox.test.js — v1.0.1 · tests: mailboxes and on-message triggers · changelog: act/CHANGELOG.md#acttestmailboxtestjs
+// mailbox.test.js — v1.0.2 · tests: mailboxes and on-message triggers · changelog: act/CHANGELOG.md#acttestmailboxtestjs
+// 1.0.2 (C4, mailbox 1.3.0): read's two filters are required. Each call that relied on the defaults passes what they gave: () => true for both;
+// the call that passed only a narrow accept passes the SAME function as own, as the default did.
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // act/mailbox.js 1.0.0 + bus 1.4.0 + scheduler 1.1.0 (ACTBUS docs/functions-and-mailboxes.md §3; owner decision, 4 Nov 2026: mailboxes +
 // on-message triggers; BOTH sides must allow; a message is removed only when the reading run succeeds, ≤ 3 deliveries then dead).
@@ -24,10 +26,10 @@ test('send → pending → read claims → finish(ok) REMOVES it; the audit hold
   const r = S(mb, { body: 'SECRET-BODY-981' });
   assert.equal(r.status, 'sent'); assert.match(r.id, /^g-[a-z0-9]+-[a-f0-9]{10}$/);
   assert.equal(mb.pending('b', 'job'), 1); assert.equal(mb.pending('b', 'other'), 0); assert.equal(mb.pending('b'), 1);
-  const got = mb.read('b', 'job', 'run-1');
+  const got = mb.read('b', 'job', 'run-1', () => true, () => true);
   assert.equal(got.length, 1); assert.equal(got[0].body, 'SECRET-BODY-981'); assert.equal(got[0].from, 'a');
   assert.equal(mb.pending('b', 'job'), 0, 'a claimed message is not waiting');
-  assert.equal(mb.read('b', 'job', 'run-2').length, 0, 'a claimed message is not read by another run');
+  assert.equal(mb.read('b', 'job', 'run-2', () => true, () => true).length, 0, 'a claimed message is not read by another run');
   assert.equal(mb.finish('run-1', true), 1);
   assert.deepEqual(mb.list('b'), []);
   assert.ok(!JSON.stringify(lines).includes('SECRET-BODY-981'), 'the body is in the audit');
@@ -39,10 +41,10 @@ test('finish(failed) delivers it AGAIN; after 3 failed runs it is DEAD (kept, li
   const { mb, lines } = mk();
   S(mb);
   for (let i = 1; i <= 3; i++) {
-    const got = mb.read('b', 'job', 'run-' + i); assert.equal(got.length, 1, 'delivery ' + i);
+    const got = mb.read('b', 'job', 'run-' + i, () => true, () => true); assert.equal(got.length, 1, 'delivery ' + i);
     mb.finish('run-' + i, false);
   }
-  assert.equal(mb.read('b', 'job', 'run-4').length, 0);
+  assert.equal(mb.read('b', 'job', 'run-4', () => true, () => true).length, 0);
   assert.equal(mb.pending('b', 'job'), 0);
   const [m] = mb.list('b'); assert.equal(m.status, 'dead'); assert.equal(m.attempts, 3);
   assert.deepEqual(lines.filter((l) => /retry|dead/.test(l.kind)).map((l) => l.kind), ['msg-retry', 'msg-retry', 'msg-dead']);
@@ -51,7 +53,7 @@ test('finish(failed) delivers it AGAIN; after 3 failed runs it is DEAD (kept, li
 test('finish only touches the messages claimed by THAT trace', () => {
   const { mb } = mk();
   S(mb, { topic: 'x' }); S(mb, { topic: 'y' });
-  mb.read('b', 'x', 'run-x'); mb.read('b', 'y', 'run-y');
+  mb.read('b', 'x', 'run-x', () => true, () => true); mb.read('b', 'y', 'run-y', () => true, () => true);
   assert.equal(mb.finish('run-x', true), 1);
   assert.equal(mb.finish('nobody', true), 0); assert.equal(mb.finish(undefined, true), 0);
   assert.deepEqual(mb.list('b').map((m) => [m.topic, m.status]), [['y', 'claimed']]);
@@ -59,7 +61,7 @@ test('finish only touches the messages claimed by THAT trace', () => {
 
 test('a claim older than claimMs (a run that never reported back) counts as a failed attempt', () => {
   const { mb, clk } = mk({ claimMs: 600000 });
-  S(mb); mb.read('b', 'job', 'lost-run');
+  S(mb); mb.read('b', 'job', 'lost-run', () => true, () => true);
   mb.releaseStale(); assert.equal(mb.pending('b', 'job'), 0, 'not yet stale');
   clk.t += 600001; mb.releaseStale();
   assert.equal(mb.pending('b', 'job'), 1); assert.equal(mb.list('b')[0].attempts, 1);
@@ -69,7 +71,8 @@ test('a claim older than claimMs (a run that never reported back) counts as a fa
 test('read re-checks the recipient\'s CURRENT rule: a sender no longer accepted → dead, not delivered', () => {
   const { mb } = mk();
   S(mb); S(mb, { from: 'c' });
-  const got = mb.read('b', 'job', 'r', (from) => from === 'c');
+  const acc = (from) => from === 'c';
+  const got = mb.read('b', 'job', 'r', acc, acc);                   // 1.0.2 (C4): own = the same narrow function, as the default gave
   assert.deepEqual(got.map((m) => m.from), ['c']);
   assert.deepEqual(mb.list('b').map((m) => [m.from, m.status]).sort(), [['a', 'dead'], ['c', 'claimed']]);
 });
@@ -84,7 +87,7 @@ test('limits: body text ≤ maxBody, names only, no self-send, ≤ perHour sends
   assert.throws(() => S(mb, { to: 'a' }), /does not send to itself/);
   S(mb); S(mb);
   assert.throws(() => S(mb), /mailbox is full/);
-  assert.equal(mb.read('b', 'job', 'r1').length, 1, 'perRead');
+  assert.equal(mb.read('b', 'job', 'r1', () => true, () => true).length, 1, 'perRead');
   S(mb, { to: 'c' });                                              // 3rd send this hour (a refused send does not count)
   assert.throws(() => S(mb, { to: 'c' }), /has sent 3 messages this hour/);
   clk.t += 3600001; S(mb, { to: 'c' });
@@ -93,7 +96,7 @@ test('limits: body text ≤ maxBody, names only, no self-send, ≤ perHour sends
 test('labels: warnings travel with the message, a credential (grounded) NEVER does; unknown labels are dropped', () => {
   const { mb } = mk();
   S(mb, { labels: ['web', 'grounded', 'model', 'nonsense', 'web'] });
-  assert.deepEqual(mb.read('b', 'job', 'r')[0].labels, ['model', 'web']);
+  assert.deepEqual(mb.read('b', 'job', 'r', () => true, () => true)[0].labels, ['model', 'web']);
 });
 
 test('fail closed: if the "sent" audit line cannot be written, no message is written', () => {
@@ -105,7 +108,7 @@ test('fail closed: if the "sent" audit line cannot be written, no message is wri
 test('a corrupt message file is skipped and audited, the others still read', () => {
   const { mb, lines } = mk();
   S(mb); fs.writeFileSync(path.join(mb.dir, 'b', 'g-0-broken.json'), '{nope');
-  assert.equal(mb.read('b', 'job', 'r').length, 1);
+  assert.equal(mb.read('b', 'job', 'r', () => true, () => true).length, 1);
   assert.ok(lines.some((l) => l.kind === 'msg-corrupt'));
 });
 
@@ -191,7 +194,7 @@ test('scheduler: an on-message trigger fires only while messages are waiting; sh
 // ---- review R2 (041126) — each FAILS on mailbox.js 1.0.0 / bus 1.4.1 ----
 test('R2 M1: a dead message is removed after 7 days, at most maxDead are kept (oldest first) — each removal audited', () => {
   const { mb, clk, lines } = mk({ maxDead: 2, maxAttempts: 1, perHour: 99 });
-  for (let i = 0; i < 4; i++) { S(mb, { topic: 't' + i }); mb.read('b', 't' + i, 'r' + i); mb.finish('r' + i, false); clk.t += 1000; }
+  for (let i = 0; i < 4; i++) { S(mb, { topic: 't' + i }); mb.read('b', 't' + i, 'r' + i, () => true, () => true); mb.finish('r' + i, false); clk.t += 1000; }
   assert.equal(mb.list('b').filter((m) => m.status === 'dead').length, 4);
   mb.releaseStale();
   assert.deepEqual(mb.list('b').map((m) => m.topic), ['t2', 't3'], 'the two oldest dead removed');
@@ -205,14 +208,14 @@ test('R2 M1: finish() touches only the mailboxes its run read from (an unrelated
   S(mb); fs.mkdirSync(path.join(mb.dir, 'c')); fs.writeFileSync(path.join(mb.dir, 'c', 'g-0-x.json'), '{bad');
   assert.equal(mb.finish('unrelated-trace', true), 0);
   assert.ok(!lines.some((l) => l.kind === 'msg-corrupt'), 'finish scanned a mailbox it never read from');
-  mb.read('b', 'job', 'run-b'); assert.equal(mb.finish('run-b', true), 1);
+  mb.read('b', 'job', 'run-b', () => true, () => true); assert.equal(mb.finish('run-b', true), 1);
   assert.ok(!lines.some((l) => l.kind === 'msg-corrupt'));
 });
 
 test('R2 M2: a damaged message file is moved to .corrupt/ ONCE (one audit line), not reported on every look', () => {
   const { mb, lines } = mk();
   S(mb); fs.writeFileSync(path.join(mb.dir, 'b', 'g-0-broken.json'), '');
-  mb.pending('b'); mb.pending('b'); mb.read('b', 'job', 'r');
+  mb.pending('b'); mb.pending('b'); mb.read('b', 'job', 'r', () => true, () => true);
   assert.equal(lines.filter((l) => l.kind === 'msg-corrupt').length, 1);
   assert.ok(fs.existsSync(path.join(mb.dir, '.corrupt', 'b--g-0-broken.json')));
   mb.releaseStale();
@@ -230,9 +233,9 @@ test('R2 L2: the read and done lines are written FIRST — if they cannot be, no
   let failOn = '';
   const mb = new Mailbox({ dir: tmp('mb-'), audit: (l) => { if (l.kind === failOn) throw new Error('disk full'); } });
   S(mb);
-  failOn = 'msg-read'; assert.throws(() => mb.read('b', 'job', 'r1'), /disk full/);
+  failOn = 'msg-read'; assert.throws(() => mb.read('b', 'job', 'r1', () => true, () => true), /disk full/);
   assert.equal(mb.pending('b', 'job'), 1, 'claimed without its line');
-  failOn = ''; mb.read('b', 'job', 'r2');
+  failOn = ''; mb.read('b', 'job', 'r2', () => true, () => true);
   failOn = 'msg-done'; mb.finish('r2', true);
   assert.equal(mb.list('b').length, 1, 'removed without its line');
 });
@@ -248,9 +251,9 @@ test('R3: a run that has FINISHED cannot claim under its trace again (a timed-ou
   const { mb } = mk();
   mb.finish('zombie', false);
   S(mb);
-  assert.throws(() => mb.read('b', 'job', 'zombie'), /already ended/);
+  assert.throws(() => mb.read('b', 'job', 'zombie', () => true, () => true), /already ended/);
   assert.equal(mb.pending('b', 'job'), 1);
-  assert.equal(mb.read('b', 'job', 'fresh').length, 1, 'another run still can');
+  assert.equal(mb.read('b', 'job', 'fresh', () => true, () => true).length, 1, 'another run still can');
 });
 
 test('R3: a record that parses but is not a message (null, a list) is treated as damaged, and the other mailboxes still work', () => {

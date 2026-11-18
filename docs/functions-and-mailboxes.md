@@ -144,7 +144,7 @@ Accepted:
 | Finding | What it is |
 |---|---|
 | L1 | An in-process timeout keeps running. Daemon mode, the default, kills it. |
-| L3 | The reach list does not show `send :to`. The grant enforces it. |
+| L3 | The reach list does not show `send :to`. The grant enforces it. Since `v0.3.9` the reach list shows it too. |
 | L4 | Two daemons can ping-pong at up to 60 per hour. |
 | L6 | The cap of 100 can overshoot by one. |
 

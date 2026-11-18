@@ -11,7 +11,7 @@ Three decisions shaped v0:
 ## 1. What PROTEUS-K v0 is (and is not)
 - **A script is an action.** It is a hash-pinned source file in the registry (kind `script`), called through the same bus, and checked, labelled and audited like `calc` or `fetch`. The interpreter is the sandbox: a script touches nothing but actions.
 - **Total.** Every script finishes. There is no `eval`, no user macros, no `lambda`, no recursion and no `while`. The only loop is `for-each` over a list, and it is capped. Fuel (a count of evaluation steps) is a second guard.
-- **Statically readable.** At registration the tree is walked, and the list of every action the script can reach is computed, with its literal `:url` and `:name` targets (`act/proteus/engine.js`:49). A literal `:to` (for `send` and `email`) is not listed; the grant still enforces it (`docs/functions-and-mailboxes.md`, finding L3). `make-registry.js`, the approval, prints that list under the script's `✓` line (§7); at each call, the bus checks every action on it against the grants of the caller and of the script's identity. Script-to-script calls must form no cycle.
+- **Statically readable.** At registration the tree is walked, and the list of every action the script can reach is computed, with its literal `:url`, `:name` and `:to` targets (`act/proteus/engine.js`:50; `:to` is the recipient of `send` and `email`, listed since `v0.3.9`). `make-registry.js`, the approval, prints that list under the script's `✓` line (§7); at each call, the bus checks every action on it against the grants of the caller and of the script's identity. Script-to-script calls must form no cycle.
 - **Not in v0:**
   - helper functions (added later, see `functions-and-mailboxes.md`);
   - routing to other nodes;

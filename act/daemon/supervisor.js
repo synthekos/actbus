@@ -1,4 +1,4 @@
-// supervisor.js — v1.1.2 · starts, bounds and stops one script daemon per script identity · changelog: act/CHANGELOG.md#actdaemonsupervisorjs
+// supervisor.js — v1.2.0 · starts, bounds and stops one script daemon per script identity · changelog: act/CHANGELOG.md#actdaemonsupervisorjs
 // SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // runs PROTEUS-K scripts in separate daemons (pkd.js), one per script identity (slice 3: ACTBUS docs/capability-architecture.md §7 item 3)
@@ -13,6 +13,11 @@
 //     up to 60 s; `crashLimit` crashes or kills (default 5) within crashWindowMs (default 10 min) PAUSE that identity until the
 //     process starts again — a new Supervisor (no restart storm);
 //   · a message from a daemon about a run it is not running is dropped and audited.
+//   · 1.2.0 (C1): every label list a daemon sends (a call's labels and ctl, a state-set's labels, a finished run's labels and seen, a
+//     failed script's labels) must be a list of known labels. Anything else is a malformed message: audited (daemon-malformed) and
+//     refused, never mapped to []. A malformed call gets a BAD_MESSAGE reply and nothing runs; a malformed state-set or end fails the
+//     run. A failure that is not a script error carries no labels and needs none (pkd.js). This guards against a FAULTY daemon: a
+//     compromised one can already send a well-formed empty list.
 // run(identity, job, ctx) → { value, labels, seen }   ·   throws Error (message 'CODE: …' for script errors, with .labels)
 //   job = { src64, actions, input, inputLabels, ctl, fuel, state:{keys, absent}, timeoutMs }
 //   ctx = { send(action, input, meta) → Promise<reply>, stateSet(key, value, labels) }   (stateSet may throw: the run then fails)
@@ -21,12 +26,14 @@ const { fork } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 const { productName: checkProduct } = require('../core/product');
+const { LABELS } = require('../core/envelope');
 
 const ACT_DIR = path.join(__dirname, '..');
 // 1.0.4: a refusal of a run that was never attempted — the class the bus, the scheduler and the mailbox treat as "not a failure"
 const TRANSIENT = Object.freeze(['DAEMON_FULL', 'DAEMON_EVICTING', 'DAEMON_OVERLAP', 'DAEMON_PAUSED', 'DAEMON_RESTARTING']);   // 1.1.2: the five this file throws (= bus TRANSIENT_CODES)
 const transient = (code, message) => { const e = new Error(message); e.code = code; e.transient = true; return e; };
 const PKD = path.join(__dirname, 'pkd.js');
+const isLabels = (v) => Array.isArray(v) && v.every((l) => typeof l === 'string' && LABELS.includes(l));   // 1.2.0 (C1): a list of known labels, nothing else
 
 // 1.0.2: the permission model checks REAL paths, and resolving a symlinked path is itself refused — so the daemon is started by the
 // real path of its file and allowed the real paths of its folders
@@ -52,6 +59,10 @@ class Supervisor {
     this.closed = false;
   }
   log(kind, identity, extra = {}) { try { this.audit({ kind: 'daemon-' + kind, identity, ...extra }); } catch { /* audit is best effort here */ } }
+  malformed(identity, t, field) {                                    // 1.2.0 (C1): audited, and the reason a message is refused
+    this.log('malformed', identity, { t, why: field + ' is not a list of known labels' });   // t and why: both fields act.js keeps in its audit line
+    return 'BAD_MESSAGE: the script daemon sent a ' + t + ' message whose ' + field + ' is not a list of known labels — refused';
+  }
   refuseBusy(code, identity, message) {                              // 1.0.3 (second-reader review, round 1): a cap refusal — coded, audited, and NOT a crash (the breaker never sees it)
     this.log('busy', identity, { code, max: this.max, slots: this.d.size });
     return transient(code, message);
@@ -117,14 +128,27 @@ class Supervisor {
     if (!m || typeof m !== 'object' || m.t === 'ready') return;
     if (!run || m.runId !== run.runId) { this.log('dropped', identity, { t: String(m.t).slice(0, 20), runId: m.runId }); return; }
     if (m.t === 'call') {
-      Promise.resolve().then(() => run.ctx.send(m.action, m.input, { labels: Array.isArray(m.labels) ? m.labels : [], ctl: Array.isArray(m.ctl) ? m.ctl : [] }))
+      const bad = !isLabels(m.labels) ? 'labels' : !isLabels(m.ctl) ? 'ctl' : null;   // 1.2.0 (C1): refused, not mapped to [] — nothing runs
+      if (bad) {
+        const error = this.malformed(identity, 'call', bad);
+        if (x.busy === run && x.child.connected) x.child.send({ t: 'reply', callId: m.callId, reply: { ok: false, code: 'BAD_MESSAGE', error, labels: [] } });
+        return;
+      }
+      Promise.resolve().then(() => run.ctx.send(m.action, m.input, { labels: m.labels, ctl: m.ctl }))
         .then((reply) => reply, (e) => ({ ok: false, code: 'ACTION_ERROR', error: String((e && e.message) || e), labels: [] }))
         .then((reply) => { if (x.busy === run && x.child.connected) x.child.send({ t: 'reply', callId: m.callId, reply }); });
     } else if (m.t === 'state-set') {
+      if (!isLabels(m.labels)) { run.stateError = run.stateError || new Error(this.malformed(identity, 'state-set', 'labels')); return; }   // 1.2.0 (C1): nothing written; the run fails
       try { run.ctx.stateSet(m.key, m.value, m.labels); } catch (e) { run.stateError = run.stateError || e; }
     } else if (m.t === 'done') {
       if (run.stateError) return run.fail(new Error('script state could not be written: ' + run.stateError.message));
-      if (m.ok) return run.done({ value: m.value, labels: m.labels || [], seen: m.seen || [] });
+      if (m.ok) {                                                       // 1.2.0 (C1): a finished run's labels and seen are required lists
+        const bad = !isLabels(m.labels) ? 'labels' : !isLabels(m.seen) ? 'seen' : null;
+        if (bad) return run.fail(new Error(this.malformed(identity, 'done', bad)));
+        return run.done({ value: m.value, labels: m.labels, seen: m.seen });
+      }
+      // 1.2.0 (C1): a script error carries its labels (pkd.js always sends a list); any other failure sends none (pkd.js), and a list if present
+      if (m.script ? !isLabels(m.labels) : (m.labels !== undefined && !isLabels(m.labels))) return run.fail(new Error(this.malformed(identity, 'done', 'labels')));
       const e = new Error(m.script ? m.code + ': ' + m.message : m.message);
       e.labels = m.labels || []; e.script = !!m.script; if (m.possibilities) e.possibilities = m.possibilities;
       run.fail(e);

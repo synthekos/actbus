@@ -2,6 +2,8 @@
 
 The entries below were moved verbatim from the file headers of `act/**` and `act.js` on 8 Nov 2026 (SYNTHEKOS tag `v0.53.5-changelog`). One section per file; within a section the newest entry is first and the oldest last; review tags (F-B, H1, R4, S3 …) are as they were. Each file keeps its current version on line 1.
 
+**17 Nov 2026 · SYNTHEKOS tag `v0.54.6` · an empty chain is refused on purpose, a daemon's bad labels are refused, and the mailbox's filters are required.** `core/capabilities.js` 1.1.2: `effective()` returns `null` for an empty chain and `modelsFor()` returns `[]`; before, both reached `[].reduce()` with no start value and were closed only by its TypeError. This was promised when pull request #19 was closed; bfs2021 opened it to fix issue #18 the same way v0.54.5 did; its two tests are in `test/core.test.js` 1.1.3, as bfs2021 wrote them. `daemon/supervisor.js` 1.2.0: every label list a script daemon sends must be a list of known labels; anything else is audited as `daemon-malformed` and refused (`BAD_MESSAGE` for a call, which then does not run; a failed run otherwise), where before it became `[]`. `mailbox.js` 1.3.0: `read` needs both its filters and `ack` its one; before, they defaulted to `() => true`, and `own` to `accept`, which marked a sender dead when a caller passed a narrow `accept` alone. `proteus/engine.js` 1.6.2: a literal `:to` is in a script's reach list, with `:url` and `:name`. Three test files are new: `empty-chain`, `daemon-message` and `required-filters`.
+
 **16 Nov 2026 · SYNTHEKOS tag `v0.54.5` · an absent `targets` restricts a chain, and four smaller faults.** In a chain, a grant for a target-taking action with no `targets` field dropped out of the intersection, so a PROTEUS-K script's own targets stood for its caller's (issue #18): `core/capabilities.js` 1.1.1 counts it as an empty list, as it already was alone. The same release: `scheduler.js` 1.3.1 gives a retry half a second of slack, so a refused trigger's second retry comes 30 s after the first, not 30 s or 45 s by a race of milliseconds (#15); `core/bus.js` 1.7.1 refuses to be built without an audit destination, and 1.7.2 drops a line that repeated its one caller's age drop (#14); `mailbox.js` 1.2.2 sets aside a record without a labels list as damaged; `test/shutdown.test.js` 1.2.0 counts a zombie as gone, so its five tests no longer fail where PID 1 does not collect orphans at once (#11). Four test files are new: `targets-chain`, `mailbox-record`, `bus-audit` and `retry-slack`.
 
 **11 Nov 2026 · SYNTHEKOS tag `v0.54.4` · the caller pays.** v0.54.3's cap made a script's `runsAs` identity fill from every caller's calls, so three callers could lock a fourth out of a shared script for up to 24 h, and the rate limit did the same for a minute. Found by the sixth cold read of ACTBUS (its #7); the rate by this release. Now a child the bus makes is not remembered, and it counts against the rate of the caller who caused it. A native action's error is never transient (its #3), and an id of "" or one that is not a string is refused (its #6), never replaced. What v0.54.3 added for scripts at the cap is removed, because no case can reach it once a child is not remembered: the pre-check before a script starts, the engine's child-call path, the `retryAfterMs` a thrown error carried, and DEDUPE_FULL in the two TRANSIENT lists. Tests: `act/test/caller-pays.test.js` 1.0.0 (new), `dedupe-full.test.js` 1.1.0, `transient.test.js` 1.3.0.
@@ -106,6 +108,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/core/capabilities.js
 
+- v1.1.2 (171126 · v0.54.6: an empty chain is refused on purpose — `effective()` returns `null` (`if (!grants.length) return null;`) and `modelsFor()` returns `[]`; before, both reached `intersect([])`, which is `[].reduce()` with no start value, and only its TypeError kept them closed. Promised when pull request #19, which bfs2021 opened, was closed)
 - v1.1.1 (161126 · v0.54.5, issue #18: in `effective()` a grant with no `targets` field counts as an empty list in the chain's intersection, as it does alone; before, it dropped out of the intersection, so another identity's list stood for it. `targets` is now always a list)
 - v1.1.0 (301026)
 
@@ -162,6 +165,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/daemon/supervisor.js
 
+- v1.2.0 (171126 · v0.54.6: every label list a daemon sends — a call's `labels` and `ctl`, a state-set's `labels`, a finished run's `labels` and `seen`, a script error's `labels` — must be a list of known labels; anything else is audited `daemon-malformed` and refused, never mapped to `[]`. A malformed call is answered `BAD_MESSAGE` and does not run; a malformed state-set or end fails the run. A failure that is not a script error may carry no labels. `BAD_MESSAGE` is not transient)
 - v1.1.2 (111126 · v0.54.4: TRANSIENT is the five codes this file throws; DEDUPE_FULL, never thrown, is no longer named. The two lists stay equal)
 - v1.1.1 (111126 · v0.54.3: TRANSIENT names DEDUPE_FULL too — the bus's code, never thrown here; the engine keeps it from a child call. The two lists stay equal)
 - v1.1.0 (081126 · v0.53.6: option productName; the DAEMON_PAUSED message is host-neutral — "… it stays paused until <product> starts again (check the audit log first)" — because the pause ends only when a new Supervisor is made, not by an admin's hand; the header says the same — "until the process starts again", was "until the server restarts")
@@ -185,6 +189,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/mailbox.js
 
+- v1.3.0 (171126 · v0.54.6: `read(to, topic, trace, accept, own)` needs both filters and `ack(to, ids, accept)` its one; a missing filter throws, and nothing is read, claimed or removed. Before, `accept` defaulted to `() => true` and `own` to `accept`, so a caller that passed a narrow `accept` alone marked a sender the recipient still accepts dead, for good)
 - v1.2.2 (161126 · v0.54.5: a record without a `labels` list is not a message record — it is moved to `.corrupt/` once and logged once, like any damaged file; `send` has always written one)
 - v1.2.1 (051126 · review R1 L3: ack removes only messages HELD for a key holder — a message never delivered, or one a script's run has claimed, is left alone; hold() marks a record keyHeld + heldTrace (on disk), a new claim clears heldTrace)
 - v1.2.0 (051126 · v0.53.0 · TENTACLE A1, ACTBUS docs/functions-and-mailboxes.md §5: ACKNOWLEDGEMENT for key holders — hold(trace) ends a run WITHOUT removing what it read: the messages stay claimed until the reader acknowledges them (ack) or claimMs (10 min) passes, then they are delivered again (dead after maxAttempts). ack(to, ids, accept) removes acknowledged messages from the reader's OWN mailbox only, from senders this run may see; an id that is unknown, already gone or dead is ignored (an ack is idempotent). Scripts keep finish() — unchanged)
@@ -201,6 +206,8 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/proteus/engine.js
 
+- v1.6.2 (171126 · v0.54.6: a literal `:to` — the recipient of send and email — is in a script's reach list, with `:url` and `:name`)
+- v1.6.1 (171126 · v0.54.6: a comment only — after supervisor 1.2.0, `clean()` drops a credential; its `: []` branch and its known-label filter stay as defence in depth)
 - v1.6.0 (111126 · v0.54.4: 1.5.1's child-call transient path is removed — no child call can be refused DEDUPE_FULL any more (bus 1.7.0). A script that started and then met a refused call answers ACTION_ERROR, its message naming the code; a run the supervisor refused before it started keeps its code and .transient (1.4.1))
 - v1.5.1 (111126 · v0.54.3: a child call the bus refused transiently is kept in THIS process; the language cannot catch an error, so that refusal ended the script. When it was the script's FIRST action call, the caller gets its code, `transient: true` and `retryAfterMs`; after an earlier call it stays ACTION_ERROR, its message naming the code. In-process and daemon alike; only the bus's reply counts, never the daemon's word)
 - v1.5.0 (081126 · v0.53.6: option productName, given to the Supervisor it makes)
@@ -267,6 +274,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/test/core.test.js
 
+- v1.1.3 (171126 · v0.54.6: two tests, `allow-list 1.1.1`, by bfs2021 from pull request #19 (commit 975e0a5), taken byte for byte with the comment before them: a grant that omits `targets` does not drop out of a chain. They pass on v0.54.5 and guard issue #18 from here on)
 - v1.1.2 (111126 · v0.54.2: the two test registries with native actions that carry `runsAs` (makeBus, and the service world) load with `runsAsAnyKindForBusTests: true`, since registry.js 1.3.0 refuses `runsAs` on any kind but script by default; no test changed name or assertion)
 - v1.1.1 (081126 · v0.53.6: test data renamed to neutral model and node names (model-a, node-a, node-b); no test name changed)
 - v1.1.0 (061126: 0.53.2 — the allow-list is refused by the bus, NO_TARGET; 3 tests that fail on bus 1.4.4)
@@ -288,6 +296,10 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 - v1.2.0 (031126; 1.2.0: round 3, the LITERAL rule — every computed value drops grounded; control carries none · 1.1.0: review-2 fixes F3 F5 F6 F7 + the owner: a length is never grounded)
 
+## act/test/daemon-message.test.js
+
+- v1.0.0 (171126 · v0.54.6: a malformed label list from a script daemon is refused, not mapped to [] — eighteen FAIL-FIRST, five GUARD, through the real supervisor, engine and bus with a stand-in daemon)
+
 ## act/test/daemon.test.js
 
 - v1.0.2 (061126 · 0.53.4: the start that evicts is refused DAEMON_EVICTING, not DAEMON_FULL — test 12's one assertion)
@@ -303,6 +315,10 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 - v1.0.1 (081126 · v0.53.6: the footer check reads "Sent by ACTBUS" — this Outbox is given no name)
 - v1.0.0 (031126)
+
+## act/test/empty-chain.test.js
+
+- v1.0.0 (171126 · v0.54.6: an empty chain holds no grant and no models, on purpose — two FAIL-FIRST, four GUARD)
 
 ## act/test/eval.test.js
 
@@ -322,10 +338,12 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/test/mailbox-record.test.js
 
+- v1.0.1 (171126 · v0.54.6: `read` needs both filters; its four calls pass `() => true` for both, as the defaults did)
 - v1.0.0 (161126 · v0.54.5: a record without a labels list is not delivered — three FAIL-FIRST, two GUARD)
 
 ## act/test/mailbox.test.js
 
+- v1.0.2 (171126 · v0.54.6: `read` needs both filters; each call that relied on the defaults passes what they gave, and the one that passed a narrow `accept` alone passes the same function as `own`; no test's meaning changed)
 - v1.0.1 (061126: the bus tests load BUILT-IN actions only, from a temp copy — an installed script no longer breaks them)
 - v1.0.0 (041126)
 
@@ -348,6 +366,10 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 - v1.0.0 (301026)
 
+## act/test/required-filters.test.js
+
+- v1.0.0 (171126 · v0.54.6: the mailbox's read and ack filters are required, and a literal `:to` is in a script's reach — five FAIL-FIRST, three GUARD)
+
 ## act/test/retry-slack.test.js
 
 - v1.0.0 (161126 · v0.54.5, issue #15: on exact 15 s ticks with the refusal back 1, 3, 17 or 250 ms late, the retries are 15 s and 30 s after the fire — four FAIL-FIRST, two GUARD)
@@ -358,6 +380,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/test/review-s3.test.js
 
+- v1.0.4 (171126 · v0.54.6: two H2 tests pinned the old mapping of a daemon's bad label lists; a label that is not known, and state labels that are not a list, are now refused, so the tests expect a refusal and still show that no junk reaches a reply or the state; the second run of the state test sends a good list and works)
 - v1.0.3 (081126 · v0.53.6: a test name no longer names the machine; it is now "macOS install: …")
 - v1.0.2 (031126 + the macOS install: a symlinked code folder)
 - v1.0.1 (031126 + the focused re-check: no credential from a daemon at all)
@@ -419,6 +442,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/test/transient.test.js
 
+- v1.3.1 (171126 · v0.54.6: `read` needs both filters; its one direct call passes `() => true` for both, as the defaults did)
 - v1.3.0 (111126 · v0.54.4: "the same five codes"; two tests added, FAIL-FIRST: a native action that did work and then throws an error marked transient is ACTION_ERROR, for every code; a native that rethrows a child refused by a busy daemon is ACTION_ERROR while the same refusal of the script itself is DAEMON_FULL, transient)
 - v1.2.2 (111126 · v0.54.3: the code list names DEDUPE_FULL; "the same six codes")
 - v1.2.1 (081126 · v0.53.6: create() is given modelUrl, not ollamaUrl)
