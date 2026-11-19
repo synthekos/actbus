@@ -1,4 +1,4 @@
-// mailbox.js — v1.3.0 · mailboxes: identities send each other messages; a waiting message can start a script · changelog: act/CHANGELOG.md#actmailboxjs
+// mailbox.js — v1.4.0 · mailboxes: identities send each other messages; a waiting message can start a script · changelog: act/CHANGELOG.md#actmailboxjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // the core's MAILBOXES: identities send each other messages; a message-triggered script reads them (ACTBUS docs/functions-and-mailboxes.md §3)
@@ -52,9 +52,10 @@ class Mailbox {
   }
   // sending — the bus has already checked both sides; this checks the limits and writes the message (audit line FIRST: no line, no message)
   send({ from, authority, to, topic, body, labels = [], trace, msgId }) {
-    const refuse = (why) => { this.log('refused', { from, to: String(to).slice(0, 60), topic: String(topic).slice(0, 60), why }); throw new Error(why); };
-    if (!NAME.test(String(to))) refuse('not an identity name: ' + String(to).slice(0, 60));
-    if (!NAME.test(String(topic))) refuse('a topic is a name (a-z, 0-9, -), got ' + JSON.stringify(String(topic).slice(0, 60)));
+    // 1.4.0 (issue #12): a refused line records `to` and `topic` only where each is a name, else null, and no reason quotes them before they pass
+    const refuse = (why) => { this.log('refused', { from, to: NAME.test(String(to)) ? to : null, topic: NAME.test(String(topic)) ? topic : null, why }); throw new Error(why); };
+    if (!NAME.test(String(to))) refuse('not an identity name: to must be a-z, 0-9, - (at most 48 characters)');
+    if (!NAME.test(String(topic))) refuse('a topic is a name (a-z, 0-9, -; at most 48 characters)');
     if (typeof body !== 'string') refuse('the body is text (use to-json for structured data)');
     if (Buffer.byteLength(body) > this.maxBody) refuse('the body is larger than ' + this.maxBody + ' bytes');
     if (to === from) refuse('an identity does not send to itself (use remember)');

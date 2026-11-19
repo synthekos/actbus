@@ -1,4 +1,4 @@
-// act.js — v1.9.3 · the host adapter: the action route, the identities' grants and `create()` · changelog: act/CHANGELOG.md#actjs
+// act.js — v1.9.4 · the host adapter: the action route, the identities' grants and `create()` · changelog: act/CHANGELOG.md#actjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // ## Design
@@ -315,7 +315,7 @@ function create(opts = {}) {
     if (!c || now - c.t0 >= 60000) c = { t0: now, n: 0, skipped: c ? c.skipped : 0 };
     c.n++; refLog.set(k, c);
     if (c.n <= 10) {
-      try { writeLine({ t: new Date().toISOString(), node: 'local', outcome: 'refused', where: 'route', code, reason: error, from: me, who: [loginId], action: typeof action === 'string' ? action.slice(0, 64) : undefined, notLogged: c.skipped || undefined }); c.skipped = 0; } catch (_) {}
+      try { writeLine({ t: new Date().toISOString(), node: 'local', outcome: 'refused', where: 'route', code, reason: error, from: me, who: [loginId], action: typeof action === 'string' && NAME.test(action) ? action : undefined,   /* 1.9.4 (issue #12, F1): an action that is not a name is not written */ notLogged: c.skipped || undefined }); c.skipped = 0; } catch (_) {}
     } else c.skipped++;
     return res.status(status).json({ ok: false, code, error });
   };

@@ -1,4 +1,4 @@
 {
-  "version": "0.54.6",
-  "note": "the kernel is this repo: act.js + act/ at tag v0.3.9 = SYNTHEKOS tag v0.54.6 (an empty chain refused on purpose, a daemon's bad label lists refused, the mailbox's filters required, a literal :to in the reach list), byte-identical"
+  "version": "0.54.7",
+  "note": "the kernel is this repo: act.js + act/ at tag v0.4.0 = SYNTHEKOS tag v0.54.7 (an id, a trace and a replyTo hold only a safe charset; a refusal and a refused message or mail record only fields that pass their rules; issue #12), byte-identical"
 }

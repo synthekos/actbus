@@ -1,4 +1,4 @@
-// outbox.js — v1.1.0 · the mail outbox: queue, allow-list and delivery; scripts never touch the network · changelog: act/CHANGELOG.md#actmailoutboxjs
+// outbox.js — v1.2.0 · the mail outbox: queue, allow-list and delivery; scripts never touch the network · changelog: act/CHANGELOG.md#actmailoutboxjs
 // SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // the core's mail outbox (slice 3: ACTBUS docs/capability-architecture.md §7 item 3) — scripts never touch the network
@@ -71,9 +71,10 @@ class Outbox {
 
   // → { id, status: 'queued', to }   ·   throws Error (the email action's reply carries the message)
   enqueue({ to, subject, text, labels = [], identity, authority, trace, msgId, targets }) {
-    const refuse = (why) => { this.log('refused', { identity, to: String(to).slice(0, 80), why }); throw new Error(why); };
+    // 1.2.0 (issue #12): a refused line records `to` only where it is a plain address (ADDR), else null, and no reason quotes it before it passes
     const addr = String(to || '').toLowerCase();
-    if (!ADDR.test(addr)) refuse('not a plain email address: ' + String(to).slice(0, 80));
+    const refuse = (why) => { this.log('refused', { identity, to: ADDR.test(addr) ? addr : null, why }); throw new Error(why); };
+    if (!ADDR.test(addr)) refuse('not a plain email address: to must be ONE address (name@example.com)');
     if (!this.allow.has(addr)) refuse(addr + ' is not on this box\'s mail allow-list (MAIL_ALLOW)');
     if (!(targets || []).map((t) => String(t).toLowerCase()).includes(addr)) refuse(addr + ' is not among the recipients granted to ' + (authority || [identity]).join(' → '));
     const now = this.clock(), mine = this.records().filter((r) => r.identity === identity);

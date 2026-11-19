@@ -447,12 +447,21 @@ Three of this release's four kernel changes were found by the project's review o
 - **C4, the mailbox's filters.** `act/mailbox.js` 1.3.0: `read` needs both its filters and `ack` its one, and a missing one throws. Before, they defaulted to `() => true`, and `own` to `accept`, so a caller that passed a narrow `accept` alone marked as dead a sender it still accepted. The bus, the kernel's only caller, always passed them. `act/test/required-filters.test.js` 1.0.0; the tests that relied on the defaults now pass filters (`mailbox.test.js`, `mailbox-record.test.js`, `transient.test.js`).
 - **B5, `:to` in the reach list.** `act/proteus/engine.js` 1.6.2 lists a literal `:to`, the recipient of `send` and `email`, with `:url` and `:name`, so the reach list an approver reads names every literal target. The second review of the mailboxes (R2) had accepted its absence as L3 (`docs/functions-and-mailboxes.md`). Pinned in `required-filters.test.js`.
 
+## 19 Nov: v0.54.7, issue #12 and the fields found while fixing it
+
+Issue #12 asked that an id and a trace be bounded to a safe charset. Building the fix, the build session found two more places where a caller's text reached the audit unchecked (F1, F2); the project's review of that work, an AI session, ruled a third, the mailbox's and the outbox's refused lines, into the same release. Each change is pinned by tests that fail on `v0.54.6`'s files, on SYNTHEKOS's host machine.
+- **#12, the envelope.** `act/core/envelope.js` 1.3.1: `id` and `trace` must match `ID`, `^[A-Za-z0-9._:-]{1,80}$`, exported beside `NAME`, and `replyTo` must be absent, `null` or match it. A value outside the rule is refused `BAD_ENVELOPE`, and the refusal names the rule, never the value. Before, an id and a trace were any 1–80 UTF-16 units and a `replyTo` any string (`act/test/id-charset.test.js` 1.0.2).
+- **F1, the route.** `act.js` 1.9.4: the route's refusal line writes the action only where it is a name. Before, an action that was not a name was written as sent.
+- **F2, a refusal.** `act/core/bus.js` 1.8.0: `refuse()` writes `from` and `action` only where each is a name, else `null`, with an envelope or without one, and an unknown identity's reason quotes `from` only where it is a name (`act/test/name-fields.test.js` 1.0.1).
+- **The mailbox and the outbox.** `act/mailbox.js` 1.4.0 and `act/mail/outbox.js` 1.2.0: a refused message's or mail's line writes `to` and `topic` only where each passes its own rule (`NAME`; for a mail, the address rule on the lowercased address), else `null`, and the reasons name the rule. A refused mail whose address passes is now recorded lowercased (`act/test/mail-fields.test.js` 1.0.0).
+- **What #12 bounds, and what stays.** Every header field of an audit line now holds a name, an id, a value the kernel made, or text the host's own admin wrote (a login name, a grant, the triggers file), which the kernel does not check to a charset. The text of a request is still recorded as sent, JSON-encoded: a run's input, including a mail's or message's digest (`to`, `subject`, `topic`); a queued mail's subject; and a refusal reason that quotes the request. Escaping that text in the audit writer is a design question for a later release (README, Known gaps).
+
 ## Index: every bare tag in the kernel, by file
 
 | File | Tag → review |
 |---|---|
-| `act.js` | 1.1.0's list of 7 → 28 Oct host adapter · H1 → R2 · R1 M2, R1 L4, re-review N2, third check C1/C2 → 5 Nov R1 · F04, F05, F09 → 5 Nov 2026 · round 1 → v0.53.2 |
-| `act/core/bus.js` | F04, F05, F06 → 5 Nov 2026 · M3 → R2 · S4 → 30 Oct self-review · "the fifth cold read's #1" → 11 Nov, v0.54.3, and 11 Nov, the cold read of v0.3.4 · "the sixth cold read's #3", "#7" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 |
+| `act.js` | 1.1.0's list of 7 → 28 Oct host adapter · H1 → R2 · R1 M2, R1 L4, re-review N2, third check C1/C2 → 5 Nov R1 · F04, F05, F09 → 5 Nov 2026 · round 1 → v0.53.2 · F1 → 19 Nov, v0.54.7 |
+| `act/core/bus.js` | F04, F05, F06 → 5 Nov 2026 · M3 → R2 · S4 → 30 Oct self-review · "the fifth cold read's #1" → 11 Nov, v0.54.3, and 11 Nov, the cold read of v0.3.4 · "the sixth cold read's #3", "#7" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 · F2 → 19 Nov, v0.54.7 |
 | `act/core/envelope.js` | "the sixth cold read's #6" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 |
 | `act/core/targets.js` | round 2 → v0.53.2 |
 | `act/core/capabilities.js` | P1 → 17 Nov, v0.54.6 |
@@ -477,6 +486,7 @@ Three of this release's four kernel changes were found by the project's review o
 | `act/test/required-filters.test.js` | C4, B5 → 17 Nov, v0.54.6 |
 | `act/test/empty-chain.test.js` | P1 → 17 Nov, v0.54.6 |
 | `act/test/daemon-message.test.js` | C1 → 17 Nov, v0.54.6 |
+| `act/test/name-fields.test.js` | F1, F2 → 19 Nov, v0.54.7 |
 | `act/test/make-registry.test.js` | "the fourth cold read's #1", "cold read v0.3.3 #1" → 11 Nov, v0.54.2, and 11 Nov, the cold read of v0.3.3 |
 | `act/test/caller-pays.test.js` | "the sixth cold read's #7" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 |
 | `act/test/dedupe-full.test.js` | "the fifth cold read's #1" → 11 Nov, v0.54.3, and 11 Nov, the cold read of v0.3.4 · "the sixth cold read's #6" → 11 Nov, v0.54.4, and 11 Nov, the cold read of v0.3.5 · M14 → the lab's mutation M14 (`lab/mutations/`) |

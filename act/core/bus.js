@@ -1,4 +1,4 @@
-// bus.js — v1.7.2 · the message bus: every check in order, then the audit line, then the action · changelog: act/CHANGELOG.md#actcorebusjs
+// bus.js — v1.8.0 · the message bus: every check in order, then the audit line, then the action · changelog: act/CHANGELOG.md#actcorebusjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // ## Design
@@ -28,6 +28,9 @@
 'use strict';
 const fs = require('fs'), path = require('path');
 const env_ = require('./envelope');
+// 1.8.0 (issue #12, F2): a refusal records `from` and `action` only where each is a name; a value that is not (from a hand-built dispatch,
+// a host's call, a script's call) is recorded as null, so no caller- or host-set text reaches the audit through them
+const nameOr = (v) => (typeof v === 'string' && env_.NAME.test(v) ? v : null);
 const { appender } = require('./durable');   // 1.4.4 (F05)
 const { productName: checkProduct } = require('./product');   // 1.5.0 (v0.53.6)
 // slice 3 (1.3.4): the audit line of an email run names the recipient and subject and the body's sha256 and size — never the body
@@ -110,7 +113,7 @@ class Bus {
   // 1.4.4 (F04): `ids` = the identity snapshot for THIS call (read fresh by the host); default = the bus's own (tests, fixed setups)
   ask(from, action, input = {}, { labels = [], hops, id, trace, ids = this.ids } = {}) {
     const who = ids.get(from);
-    if (!who) return Promise.resolve(this.refuse(null, ERR.UNKNOWN_IDENTITY, 'unknown identity ' + JSON.stringify(from), { from, action }));
+    if (!who) return Promise.resolve(this.refuse(null, ERR.UNKNOWN_IDENTITY, 'unknown identity ' + (nameOr(from) ? JSON.stringify(from) : '(not a name)'), { from, action }));
     let env;
     try { env = env_.root({ from, action, input, labels, kindLabel: caps.KIND_LABEL[who.kind], hops, id, trace, time: this.now() }); }
     catch (e) { return Promise.resolve(this.refuse(null, ERR.BAD_ENVELOPE, e.message, { from, action })); }
@@ -118,9 +121,9 @@ class Bus {
   }
 
   refuse(env, code, reason, extra = {}) {
-    const rec = { id: env && env.id, trace: env && env.trace, replyTo: env && env.replyTo, from: env ? env.from : extra.from, authority: env && env.authority,
+    const rec = { id: env && env.id, trace: env && env.trace, replyTo: env && env.replyTo, from: nameOr(env ? env.from : extra.from), authority: env && env.authority,
       ...(env && env.ctl && env.ctl.length ? { ctl: env.ctl } : {}),
-      action: env ? env.action : extra.action, hops: env && env.hops, labels: env && env.labels, outcome: 'refused', code, reason,
+      action: nameOr(env ? env.action : extra.action), hops: env && env.hops, labels: env && env.labels, outcome: 'refused', code, reason,
       ...(extra.transient === true ? { transient: true } : {}), ...(Number.isFinite(extra.retryAfterMs) ? { retryAfterMs: extra.retryAfterMs } : {}) };   // 1.6.0
     try { this.audit(rec); } catch { /* the refusal stands even if the log is unwritable */ }
     return { ok: false, id: rec.id, trace: rec.trace, action: rec.action, code, ...(rec.transient ? { transient: true } : {}), ...(rec.retryAfterMs !== undefined ? { retryAfterMs: rec.retryAfterMs } : {}), error: reason };

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
-// measure-memory-bus.js — v1.0.0 (121126) · the memory of the ids the bus keeps, by the second of the two methods in docs/host.md ("The dedupe
+// measure-memory-bus.js — v1.1.0 (181126) · the memory of the ids the bus keeps, by the second of the two methods in docs/host.md ("The dedupe
 // check"). It was the release kit's measure-v035.js 1.0.0 (kit actbus-v035-111126); only this header and the name in its usage lines
 // changed. It measures what one remembered id costs on THIS machine: bytes of heap
 // per id, and per identity at the cap. It is a measurement, not a check: it prints the numbers and fails only if it could not measure.
@@ -8,15 +8,15 @@
 // grant's rate never refuses one; then the heap is read (after a full gc) with that identity's set held, and again after the set alone is
 // dropped. The difference over N is the cost of one entry of the set: the id string and its time. Everything else the run made (audit,
 // traces, rates) is held in both readings, so it cancels out. A fall of 16 bytes per id or less is not a measurement, and fails.
-// The kinds: uuid (no id from the caller: the bus makes a 36-character one, as the route does); ascii80, latin80, cyr80 and astral80
-// (the caller's id, 80 UTF-16 code units, the most check 1 lets in: 72 of x, é, ж, or 36 of the emoji U+1F600 at two units each, then
-// an 8-digit counter). V8 keeps a string whose characters are all Latin-1 at one byte per unit, and any other at two.
-// Writes only into a temp folder.   usage: node --expose-gc tools/measure-memory-bus.js <tree> <uuid|ascii80|latin80|cyr80|astral80> [N, default 50000]
+// The kinds: uuid (no id from the caller: the bus makes a 36-character one, as the route does) and ascii80 (the caller's id, 80
+// characters, the most check 1 lets in: 72 of x, then an 8-digit counter). 1.1.0 (issue #12): latin80, cyr80 and astral80 are gone,
+// because an id may now hold only A-Z a-z 0-9 . _ : - (act/core/envelope.js), which V8 keeps at one byte per character.
+// Writes only into a temp folder.   usage: node --expose-gc tools/measure-memory-bus.js <tree> <uuid|ascii80> [N, default 50000]
 'use strict';
 const fs = require('fs'), os = require('os'), path = require('path');
 const [T0, KIND, N0] = process.argv.slice(2);
-const FILL = { ascii80: 'x'.repeat(72), latin80: 'é'.repeat(72), cyr80: 'ж'.repeat(72), astral80: '\u{1F600}'.repeat(36) };
-if (!T0 || !(KIND === 'uuid' || KIND in FILL) || typeof global.gc !== 'function') { console.error('usage: node --expose-gc tools/measure-memory-bus.js <tree> <uuid|ascii80|latin80|cyr80|astral80> [N]'); process.exit(2); }
+const FILL = { ascii80: 'x'.repeat(72) };
+if (!T0 || !(KIND === 'uuid' || KIND in FILL) || typeof global.gc !== 'function') { console.error('usage: node --expose-gc tools/measure-memory-bus.js <tree> <uuid|ascii80> [N]'); process.exit(2); }
 const mk = (k) => KIND === 'uuid' ? null : FILL[KIND] + String(k).padStart(8, '0');
 const R = path.join(path.resolve(T0), 'act'), N = Number(N0 || 50000);
 const registry = require(R + '/core/registry'), caps = require(R + '/core/capabilities'), { Names } = require(R + '/core/names'), { Bus } = require(R + '/core/bus');

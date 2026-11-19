@@ -2,6 +2,8 @@
 
 The entries below were moved verbatim from the file headers of `act/**` and `act.js` on 8 Nov 2026 (SYNTHEKOS tag `v0.53.5-changelog`). One section per file; within a section the newest entry is first and the oldest last; review tags (F-B, H1, R4, S3 …) are as they were. Each file keeps its current version on line 1.
 
+**19 Nov 2026 · SYNTHEKOS tag `v0.54.7` · an id, a trace and a replyTo hold only safe characters, and a refusal writes only names (issue #12).** `core/envelope.js` 1.2.1 bounded `id` and `trace` to 1–80 UTF-16 units of any character and did not bound `replyTo` at all. JSON escapes the C0 controls, but it leaves U+2028, U+2029, NEL, the C1 controls and the bidi controls raw, so such a value could break an audit line for a reader that splits on Unicode line separators, or reorder it on a terminal that renders bidi. `core/envelope.js` 1.3.1: `id`, `trace` and `replyTo` must match `ID`, `^[A-Za-z0-9._:-]{1,80}$` (exported beside `NAME`); `replyTo` may also be absent or `null`; a value outside the rule is refused `BAD_ENVELOPE`, and the message names the rule, never the value. Building the fix found two more places where a caller's or a host's text reached the audit unchecked: `act.js` 1.9.4 — the route's refusal line wrote an action that is not a name as sent; it now writes the action only when it is a name. `core/bus.js` 1.8.0 — `refuse()` wrote `from` and `action` as given; it now writes each only when it is a name, and `null` otherwise, and an unknown identity's reason quotes it only when it is a name. A refusal's reply carries the same `action`, so it is `null` where the action sent was not a name. `mailbox.js` 1.4.0 and `mail/outbox.js` 1.2.0: a refused message's or mail's line wrote `to` and `topic` as given, before they were checked, and the reasons quoted them; each line now writes `to` and `topic` only where each passes its own rule (`NAME`; for a mail's address, `ADDR` on the lowercased address), and `null` otherwise, and the reasons name the rule, never the value. A refused mail whose address passes `ADDR` is now recorded lowercased, not as sent. What stays caller text, JSON-encoded as sent: a run's recorded input, including a mail's or message's digest (`to`, `subject`, `topic`); a queued mail's subject; and a refusal reason that quotes the request (ACTBUS README, Known gaps). New tests: `id-charset.test.js` (13: eight fail on 0.54.6), `name-fields.test.js` (13: eight fail on 0.54.6) and `mail-fields.test.js` (8: four fail on 0.54.6).
+
 **17 Nov 2026 · SYNTHEKOS tag `v0.54.6` · an empty chain is refused on purpose, a daemon's bad labels are refused, and the mailbox's filters are required.** `core/capabilities.js` 1.1.2: `effective()` returns `null` for an empty chain and `modelsFor()` returns `[]`; before, both reached `[].reduce()` with no start value and were closed only by its TypeError. This was promised when pull request #19 was closed; bfs2021 opened it to fix issue #18 the same way v0.54.5 did; its two tests are in `test/core.test.js` 1.1.3, as bfs2021 wrote them. `daemon/supervisor.js` 1.2.0: every label list a script daemon sends must be a list of known labels; anything else is audited as `daemon-malformed` and refused (`BAD_MESSAGE` for a call, which then does not run; a failed run otherwise), where before it became `[]`. `mailbox.js` 1.3.0: `read` needs both its filters and `ack` its one; before, they defaulted to `() => true`, and `own` to `accept`, which marked a sender dead when a caller passed a narrow `accept` alone. `proteus/engine.js` 1.6.2: a literal `:to` is in a script's reach list, with `:url` and `:name`. Three test files are new: `empty-chain`, `daemon-message` and `required-filters`.
 
 **16 Nov 2026 · SYNTHEKOS tag `v0.54.5` · an absent `targets` restricts a chain, and four smaller faults.** In a chain, a grant for a target-taking action with no `targets` field dropped out of the intersection, so a PROTEUS-K script's own targets stood for its caller's (issue #18): `core/capabilities.js` 1.1.1 counts it as an empty list, as it already was alone. The same release: `scheduler.js` 1.3.1 gives a retry half a second of slack, so a refused trigger's second retry comes 30 s after the first, not 30 s or 45 s by a race of milliseconds (#15); `core/bus.js` 1.7.1 refuses to be built without an audit destination, and 1.7.2 drops a line that repeated its one caller's age drop (#14); `mailbox.js` 1.2.2 sets aside a record without a labels list as damaged; `test/shutdown.test.js` 1.2.0 counts a zombie as gone, so its five tests no longer fail where PID 1 does not collect orphans at once (#11). Four test files are new: `targets-chain`, `mailbox-record`, `bus-audit` and `retry-slack`.
@@ -22,6 +24,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act.js
 
+- v1.9.4 (191126 · v0.54.7, issue #12: the route's refusal line (`refuseHere`) writes `action` only when it is a name; an action that is not a name was written as sent, up to 64 units)
 - v1.9.3 (111126 · v0.54.4: `route` passes the id as sent; a non-string id (7, null, an object) is refused 400 BAD_ENVELOPE by the envelope check — 1.9.2 replaced it with a new one)
 - v1.9.2 (111126 · v0.54.3: `route` sends a transient refusal's own `Retry-After` (edge.js 1.0.3 `retryAfter`): when it clears, if the refusal knows (DEDUPE_FULL), else 5 s)
 - v1.9.1 (111126 · v0.54.2. #1: the refusal of `runsAs` on an action that is not a script moved into the registry's own check (core/registry.js 1.3.0), so the approval step refuses the same set this load does. N1 (the 11 Nov note): before, it ran after the load, so a script that called such an action stayed loaded and grantable and failed at run with UNKNOWN_ACTION. #16 and the Known-gaps item on line 51: the refusal's text now begins `registry entry "<name>": `. The email-grant message names `MAIL_ALLOW in create()'s env`, not "in the .env". The header no longer shows `POST /api/act` with a Bearer key as this file's interface: `route()` takes the EUser the host authenticated, and the reference host's server.js is named as the host that serves that route; line 1 says "the action route", not "the HTTP route")
@@ -87,6 +90,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/core/bus.js
 
+- v1.8.0 (191126 · v0.54.7, issue #12: `refuse()` writes `from` and `action` only when each is a name, else `null` (`nameOr`), with an envelope or without one, so the hop limit's and a child call's refusals are covered too; an unknown identity's reason quotes `from` only when it is a name, else says `(not a name)`)
 - v1.7.2 (161126 · v0.54.5, issue #14: `dedupeFull()` no longer drops the identity's ids older than the window; its one caller, dispatch, has just done so with the same `now`)
 - v1.7.1 (161126 · v0.54.5: the constructor refuses a bus with neither `audit` nor `auditFile` — every message is audited before its action runs, so a bus that writes nowhere is not built)
 - v1.7.0 (111126 · v0.54.4, the sixth cold read's #3 and #7: a child the bus made (`ctx.send`) is not remembered and fills no identity's set — its id is a fresh random one nobody can send again; a root message is unchanged. A child counts against the ROOT caller's rate (`authority[0]`), not the identity it is sent as: the caller who caused the work pays for it, and a time trigger, whose root is its `runsAs` identity, pays for its own. 1.6.0's pre-check before a script starts is removed (nothing can fill a script's identity from its calls), and so is the `retryAfterMs` a thrown error carried. `transient` on a thrown error is believed only from a script (the engine); a native action's error is ACTION_ERROR, whatever it carries. TRANSIENT_CODES no longer names DEDUPE_FULL: only a root is refused it, by refuse())
@@ -126,6 +130,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/core/envelope.js
 
+- v1.3.1 (191126 · v0.54.7, issue #12: `ID` = `^[A-Za-z0-9._:-]{1,80}$`, exported; `id` and `trace` must match it, `replyTo` must be absent, `null` or match it; the refusal names the rule, not the value. The stage files before it were 1.3.0, the same code with one comment that pointed to a document a reader cannot open)
 - v1.2.1 (111126 · v0.54.4, the sixth cold read's #6: only a missing id is made by root(); an id of "" is checked, and refused BAD_ENVELOPE — 1.2.0 replaced it with a new one)
 - v1.2.0 (031126 F-B: CREDENTIALS — `grounded` is never inherited by a child and never declared by a caller at the edge; warnings are inherited and may be added exactly as before; ACTBUS docs/reviews.md, PROTEUS-K review finding 1, review 2 F1)
 - was v1.1.0 (301026)
@@ -177,6 +182,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/mail/outbox.js
 
+- v1.2.0 (191126 · v0.54.7, issue #12: a refused mail's line writes `to` only where the lowercased address passes `ADDR`, else `null`; it wrote the address as given, before the check, and the reason quoted it; the reason now names the rule. A refused mail whose address passes is recorded lowercased)
 - v1.1.0 (081126 · v0.53.6: option productName; the footer says "Sent by <product> for …" (footer() takes product, default ACTBUS))
 - v1.0.1 (031126 review: M1 delivery re-checks MAIL_ALLOW — mail to an address removed since it was queued is failed, not sent; M2 a record is marked "sending" on disk BEFORE it is handed to the server — if that write fails nothing is sent, and a record left "sending" by a crash is failed, never resent (it may have gone out); a failing audit can no longer throw out of a delivery pass; the "queued" audit line is written before the record — no line, no mail)
 - was v1.0.0 (031126)
@@ -189,6 +195,7 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 ## act/mailbox.js
 
+- v1.4.0 (191126 · v0.54.7, issue #12: a refused message's line writes `to` and `topic` only where each passes `NAME`, else `null`; it wrote them as given, before the checks, and the reasons quoted them; the reasons now name the rule)
 - v1.3.0 (171126 · v0.54.6: `read(to, topic, trace, accept, own)` needs both filters and `ack(to, ids, accept)` its one; a missing filter throws, and nothing is read, claimed or removed. Before, `accept` defaulted to `() => true` and `own` to `accept`, so a caller that passed a narrow `accept` alone marked a sender the recipient still accepts dead, for good)
 - v1.2.2 (161126 · v0.54.5: a record without a `labels` list is not a message record — it is moved to `.corrupt/` once and logged once, like any damaged file; `send` has always written one)
 - v1.2.1 (051126 · review R1 L3: ack removes only messages HELD for a key holder — a message never delivered, or one a script's run has claimed, is left alone; hold() marks a record keyHeld + heldTrace (on disk), a new claim clears heldTrace)
@@ -332,9 +339,17 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 - v1.0.0 (081126 · v0.53.6-purpose: its first version line; the code is as it was)
 
+## act/test/id-charset.test.js
+
+- v1.0.2 (191126 · v0.54.7, issue #12: an id, a trace and a replyTo outside the rule are refused at every door — the route, the edge, `ask`, a hand-built `dispatch` — and the value reaches no reply, reason, audit line or dedupe line; eight FAIL-FIRST, five GUARD. The stage files before it: 1.0.0 held five of its values as raw characters in its source, 1.0.1 wrote them as `\u` escapes (the same strings), 1.0.2 changed comments only)
+
 ## act/test/invariants.test.js
 
 - v1.0.0 (021126)
+
+## act/test/mail-fields.test.js
+
+- v1.0.0 (191126 · v0.54.7, issue #12: a refused message or mail records its `to` and `topic` only where each passes its rule, through the send action and with the mailbox and the outbox called directly; four FAIL-FIRST, four GUARD, two of which show that through the bus a `to` outside the rule never reaches the mailbox or the outbox)
 
 ## act/test/mailbox-record.test.js
 
@@ -351,6 +366,10 @@ The entries below were moved verbatim from the file headers of `act/**` and `act
 
 - v1.1.0 (111126 · v0.54.2: 10 tests added, 2 kept by name. GUARD (second-reader review of v0.54.2, round 1): act.js and make-registry.js never name `runsAsAnyKind`, and each makes one registry call with exactly `{ scriptEngine: engine }`. FAIL-FIRST on v0.54.1's files: the reader's three scripts (an unregistered call, `world: false` reaching fetch and file-append, a world action under web data with no acceptWarnings) each exit 1 with the loader's reason and write no registry.json; a dashed input name is refused with the field-name rule; a script calling a native action with `runsAs` is refused at load; one folder with ten kinds of refusal gives the tool and `create()` the same refused names and reasons; the reach and the accepted warnings are printed; a registry.json already there is left byte for byte on a refusal. GUARD: the shipped actions folder is approved with the same entries and pins as the shipped registry.json. The fixture folder now holds the shipped actions and a script the loader loads: the old one called calc with no calc in the folder)
 - v1.0.0 (101126 · v0.54.0: make-registry.js on a temp folder — the three kinds of trigger (every, at, on message) give their exact approval lines and never "undefined", FAIL-FIRST on v0.53.9's file; a trigger naming a script that is not registered stops it: exit 1, no triggers.json)
+
+## act/test/name-fields.test.js
+
+- v1.0.1 (191126 · v0.54.7, issue #12: a refusal writes `from` and `action` only when each is a name, at the route, the edge, `ask`, a hand-built `dispatch`, a child call and the hop limit; eight FAIL-FIRST, five GUARD, one of which pins the stated limit: a run's input is recorded as sent. 1.0.0 was the stage file, the same tests with comments that pointed to documents a reader cannot open)
 
 ## act/test/p0.test.js
 

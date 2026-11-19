@@ -1,4 +1,4 @@
-// envelope.js — v1.2.1 · the one message format, and the labels it carries · changelog: act/CHANGELOG.md#actcoreenvelopejs
+// envelope.js — v1.3.1 · the one message format, and the labels it carries · changelog: act/CHANGELOG.md#actcoreenvelopejs
 // SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // the one message format for everything (ACTBUS docs/capability-architecture.md §1 item 2)
@@ -19,6 +19,12 @@ const crypto = require('crypto');
 const LABELS = Object.freeze(['person', 'device', 'computed', 'grounded', 'model', 'web']);
 const TAINT = Object.freeze(['model', 'web']);            // text that may carry instructions it did not come from a person
 const NAME = /^[a-z][a-z0-9-]{0,47}$/;                    // identity, action and node names
+// 1.3.0 (issue #12): a message id, a trace and a replyTo — 1–80 characters, each a letter, a digit, '.', '_', ':' or '-'. JSON escapes the
+// C0 controls but not U+2028/U+2029, NEL, C1 or bidi controls, so a reader of the audit could see a record broken or reordered; now none
+// of them, and no other character outside the set, can reach the audit, the dedupe file or a reply through an envelope. (JS: no m flag,
+// so $ is the end of the string, not a newline before it.)
+const ID = /^[A-Za-z0-9._:-]{1,80}$/;
+const ID_RULE = "1–80 characters, each a letter, a digit, '.', '_', ':' or '-'";
 const MAX_HOPS = 16, DEFAULT_HOPS = 8;
 
 const newId = () => crypto.randomUUID();
@@ -27,7 +33,7 @@ function fail(msg) { const e = new Error(msg); e.code = 'BAD_ENVELOPE'; throw e;
 
 function check(env) {
   if (!env || typeof env !== 'object') fail('envelope must be an object');
-  for (const k of ['id', 'trace']) if (typeof env[k] !== 'string' || env[k].length < 1 || env[k].length > 80) fail(k + ' must be a string of 1–80 characters');
+  for (const k of ['id', 'trace']) if (typeof env[k] !== 'string' || !ID.test(env[k])) fail(k + ' must be ' + ID_RULE);   // 1.3.0 (#12): was 1–80 UTF-16 units, any characters
   for (const k of ['from', 'action', 'to']) if (typeof env[k] !== 'string' || !NAME.test(env[k])) fail(k + ' must be a name (a-z, 0-9, -; starts with a letter)');
   if (!Number.isInteger(env.hops) || env.hops < 0 || env.hops > MAX_HOPS) fail('hops must be a whole number 0–' + MAX_HOPS);
   if (!Array.isArray(env.labels) || env.labels.some((l) => !LABELS.includes(l))) fail('labels must be a list of: ' + LABELS.join(', '));
@@ -35,7 +41,7 @@ function check(env) {
   if (!Array.isArray(env.authority) || env.authority.length < 1 || env.authority.length > MAX_HOPS + 1 || env.authority.some((a) => typeof a !== 'string' || !NAME.test(a))) fail('authority must be a non-empty list of identity names');
   if (env.authority[env.authority.length - 1] !== env.from) fail('from must be the last identity in authority');
   if (typeof env.time !== 'string') fail('time must be an ISO string');
-  if (env.replyTo !== undefined && env.replyTo !== null && typeof env.replyTo !== 'string') fail('replyTo must be a message id');
+  if (env.replyTo !== undefined && env.replyTo !== null && (typeof env.replyTo !== 'string' || !ID.test(env.replyTo))) fail('replyTo must be absent, null or a message id: ' + ID_RULE);   // 1.3.0 (#12: replyTo too)
   if (env.input === undefined) fail('input is required (use {} for none)');
   let size; try { size = JSON.stringify(env.input).length; } catch { fail('input must be plain JSON'); }
   if (size > 256 * 1024) fail('input larger than 256 KB');
@@ -63,4 +69,4 @@ function child(parent, { action, input = {}, labels = [], ctl = [], from, author
 
 const tainted = (labels) => labels.filter((l) => TAINT.includes(l));
 
-module.exports = { LABELS, TAINT, CREDENTIALS, NAME, MAX_HOPS, DEFAULT_HOPS, check, root, child, tainted, newId };
+module.exports = { LABELS, TAINT, CREDENTIALS, NAME, ID, MAX_HOPS, DEFAULT_HOPS, check, root, child, tainted, newId };
