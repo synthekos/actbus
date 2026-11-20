@@ -93,7 +93,7 @@ With no match, `the` stops the script with code `FAIL`: `(the (x (list 3 8 1)) (
   - `topic` is a name: `a-z`, `0-9` and `-`, starting with a letter, at most 48 characters (`act/mailbox.js`). Any other answers 422 `ACTION_ERROR`, `a topic is a name (a-z, 0-9, -)`, for `send` and for `messages`.
   - `body` is text up to 16 KB. Use `to-json` and `parse-json` for structure.
 - **`messages {topic}`** returns up to 20 `{id, from, topic, body, at, labels}`, oldest first. `labels` are the labels the message carries ("Labels travel", below): a message from an EUser carries at least `device`.
-- **Both sides must allow.** The sender's `send` grant must name the recipient (in its targets, intersected along the chain), *and* the recipient's `messages` grant must name the sender. This is checked when the message is sent *and* again when it is read. Only the recipient's own grant can mark a message dead; a narrower caller in the chain simply doesn't see it.
+- **Both sides must allow.** The sender's `send` grant must name the recipient (in its targets, intersected along the chain), *and* the recipient's `messages` grant must name the sender, the identity the `send` runs as (for a script with `runsAs`, the script's identity, not its caller). This is checked when the message is sent *and* again when it is read. Only the recipient's own grant can mark a message dead; a narrower caller in the chain simply doesn't see it.
 - **Delivery.** A message read by a run is *claimed* for that run's trace. When the run ends:
   - success → the message is removed;
   - failure → it is delivered again;

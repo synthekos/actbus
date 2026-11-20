@@ -1,4 +1,4 @@
 {
-  "version": "0.54.7",
-  "note": "the kernel is this repo: act.js + act/ at tag v0.4.0 = SYNTHEKOS tag v0.54.7 (an id, a trace and a replyTo hold only a safe charset; a refusal and a refused message or mail record only fields that pass their rules; issue #12), byte-identical"
+  "version": "0.54.8",
+  "note": "the kernel is this repo: act.js + act/ at tag v0.4.1 = SYNTHEKOS tag v0.54.8 (the audit escapes the unsafe characters; a daemon's message type, runId and pid are checked; issue #20), byte-identical"
 }

@@ -7,7 +7,7 @@
 1. **Identity (who):** a person, a key-holding client (an "EUser"), a device (a microcontroller, a phone app), a script, or another node. Each identity has a key and a **capability list**:
    - which actions it may call;
    - which identities it may message;
-   - which outside targets it may reach (hosts and addresses; its files stay in its own folder);
+   - which outside targets it may reach (hosts and addresses; its files stay in its own folder, which a script that runs as it uses for every caller);
    - which models it may use.
 
    Every identity has a human owner.
@@ -23,16 +23,16 @@
    - **tentacle**: an adapter to the outside world.
      - `fetch`: HTTP to allow-listed hosts.
      - `email`: SMTP to allow-listed addresses.
-     - `file`: only the identity's own folder.
+     - `file`: only the own folder of the identity the action runs as.
    - **script**: PROTEUS-K logic that composes actions (see `proteus-k.md`). **Scripts are actions, and the interpreter is the sandbox.** A script touches nothing except the actions its identity may call, so programmability is open while power stays narrow.
 
 ## 2. Rules
 - **The model never executes and never chooses an action on its own.** It turns language into a *proposed* script, and a person approves it before it is registered. A model may be called *by* an action (`model` is itself an action) with fixed instructions. Its output is labelled `model`, never `computed`.
-- **Every message carries an identity.** A script runs *as* an identity. Every model call, tentacle call and state access carries that identity. This is the basis of isolation and of the audit.
-- **No raw shell.** No action takes a command string. Hosts and addresses are allow-listed per identity; files are confined to the identity's own folder.
+- **Every message carries an identity.** A script runs *as* an identity. Every model call, tentacle call and state access carries that identity. This is the basis of isolation and of the audit. What the script acts on (its files, its mailbox, its acceptance by others, its budgets) is that identity's, whoever called it: only grants, targets and models are intersected along the chain.
+- **No raw shell.** No action takes a command string. Hosts and addresses are allow-listed per identity; files are confined to the own folder of the identity the action runs as.
 - **Deterministic first.** Exact jobs, such as arithmetic or reading a number from a page, are native code. The reason was measured during development: language models multiplied two four-digit numbers wrongly on every pass, and nothing showed it. A model may be a labelled fallback, never a silent one.
 - **Bounded work.** Every computed action bounds its own work, because a synchronous action blocks the bus while it runs. For example, `calc` limits every intermediate result to 8 192 bits; the worst case measured was 14 ms.
-- **Every run is audited:** who, the action and its hash, the input (for `send` and `email`, the body's sha256 and size instead of the body), the outcome, the node, the time and the trace. Every other action's input is written to the audit log as it was given, model prompts and `file-append` text included, as JSON cut at 300 characters (`act/core/bus.js`). A "run" line is written *before* the action runs. No line means no run (fail closed).
+- **Every run is audited:** who, the action and its hash, the input (for `send` and `email`, the body's sha256 and size instead of the body), the outcome, the node, the time and the trace. Every other action's input is written to the audit log as it was given, model prompts and `file-append` text included, as JSON cut at 300 characters (`act/core/bus.js`). In a host built with `act.js`, every audit line has DEL, C1, U+061C, U+200B–200F, U+2028–202E, U+2060–2069 and U+FEFF escaped (since `v0.4.1`); a host built on `Bus` alone, with `auditFile` or its own `audit` function, is not covered. A "run" line is written *before* the action runs. No line means no run (fail closed).
 - **Refuse what is inconsistent** instead of guessing. For example, "Tuesday 31 Oct 2026" is refused by `date-diff`, because 31 Oct 2026 is a Saturday.
 
 ## 3. Many models, many machines
@@ -103,7 +103,7 @@ The script lines in this section are sketches written before PROTEUS-K v0, and t
 Technically this is the **actor model** (as in Erlang or Akka), with some actors backed by a language model. Each failure mode forces a rule:
 1. **Loops and storms** → a hop limit and a trace id in every envelope; per-identity rate limits and trace budgets. Cycles in the static "who may message whom" graph are refused unless explicitly allowed (designed, not built: the code refuses cycles only between script-to-script calls, `act/core/registry.js`).
 2. **Injection travels** (poisoned web text steering an action several hops later; the biggest danger) → model output is *data*, never instructions, at every hop. Every message carries provenance labels, and conditions that fire actions are evaluated by code on typed values. A world action fed by web- or model-labelled input needs an explicit rule or a person.
-3. **Confused deputy** → authority attenuates along a chain. An action triggered through a chain may do only what *every* identity in the chain may do (intersection).
+3. **Confused deputy** → authority attenuates along a chain. An action triggered through a chain may do only what *every* identity in the chain may do (intersection), for grants, targets and models. What it acts on (files, mailbox, acceptance by others, budgets) is the identity's it runs as (issue #21).
 4. **Errors compound** (about 95 % correct per model hop was measured, so 5 hops is about 77 %) → few model hops, computed conditions and plain data passing. Labels propagate, so the result shows whether *any* step was a model.
 5. **Distributed failure** → message ids with duplicate suppression, timeouts, and supervisors ("let it crash").
 6. **Nobody can see the mesh** → a static graph view, cycle-checked before anything runs, and a live trace. "Explain this outcome" walks the trace back to its cause. (Designed, not built: what exists is the audit log, where every line carries its trace id.)

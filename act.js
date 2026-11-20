@@ -1,4 +1,4 @@
-// act.js — v1.9.4 · the host adapter: the action route, the identities' grants and `create()` · changelog: act/CHANGELOG.md#actjs
+// act.js — v1.10.2 · the host adapter: the action route, the identities' grants and `create()` · changelog: act/CHANGELOG.md#actjs
 // Copyright (c) 2026 John Koperwas. SPDX-License-Identifier: Apache-2.0
 // (C) John Koperwas 2026
 // ## Design
@@ -72,7 +72,7 @@ const caps = require('./act/core/capabilities');
 const { Names } = require('./act/core/names');
 const { Bus, ERR } = require('./act/core/bus');
 const { STATUS, retryAfter } = require('./act/core/edge');
-const { NAME } = require('./act/core/envelope');
+const { NAME, ID } = require('./act/core/envelope');
 const { createEngine } = require('./act/proteus/engine');
 const { Outbox, parseAllow, checkGrants } = require('./act/mail/outbox');   // 1.3.0
 const smtp = require('./act/mail/smtp');
@@ -170,6 +170,17 @@ function modelAdapter({ modelUrl, fetchImpl }) {
   };
 }
 
+// 1.1.0: one audit line is at most 4 KB — long fields are cut, and the line says so
+// 1.10.0 (cold read of v0.4.0, findings 1 and 2; issue #20): every line is written with DEL, C1, U+061C, U+200B–200F, U+2028–202E, U+2060–2069
+// and U+FEFF escaped as \uXXXX (JSON.stringify escapes C0 itself). These occur only inside JSON strings, so a JSON parser reads back the same
+// values. The 4 KB measure, the 200-character cut and the fallback line are all of the escaped text. Module level since 1.10.0, and exported
+// as auditLine for the tests (it holds no state of create())
+const UNSAFE = /[\x7f-\x9f\u061c\u200b-\u200f\u2028-\u202e\u2060-\u2069\ufeff]/g;
+const J = (o) => JSON.stringify(o).replace(UNSAFE, (c) => '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0'));
+const cap = (j) => { let s = J(j); if (s.length <= 4096) return s;
+  for (const k of Object.keys(j)) if (typeof j[k] === 'string' && j[k].length > 200) j[k] = j[k].slice(0, 200) + '…';
+  j.truncated = true; s = J(j); return s.length <= 4096 ? s : J({ t: j.t, node: j.node, outcome: j.outcome, code: j.code, who: j.who, truncated: true }); };
+
 function create(opts = {}) {
   checkOptionNames(opts);
   const { prisma, models, modelUrl, productName, appDir = __dirname, fetchImpl, log = console, actionsDir = ACTIONS_DIR, env = process.env, daemon, mailTls, triggersFile, clock } = opts;
@@ -186,7 +197,14 @@ function create(opts = {}) {
   // 1.3.0: scripts run in a separate daemon per identity unless PK_DAEMON=0; its start/stop/crash/pause lines go to the same log
   const pick = (rec, keys) => Object.fromEntries(keys.filter((k) => rec[k] !== undefined).map((k) => [k, rec[k]]));
   const engine = createEngine({ stateRoot: FILES_ROOT, daemon: daemon !== undefined ? daemon : env.PK_DAEMON !== '0', productName: product,
-    audit: (rec) => writeLine({ t: new Date().toISOString(), node: 'local', outcome: rec.kind, ...pick(rec, ['identity', 'key', 'labels', 'size', 'pid', 'permission', 'why', 'code', 'signal', 'inWindow', 'crashes', 't', 'runId']) }) });
+    // 1.10.0 (cold read of v0.4.0, finding 2): the record's own `t` (a daemon message's type) is written as `msg`, and only where it is a name; `runId`
+    // only where it passes the id rule, else null. `t`, `node` and `outcome` are set after the record's fields, so no key of a record can replace them
+    // 1.10.1 (the review of the repair, R6 and R8 → docs/reviews.md, 20 Nov): `runId` only where it is a string or a number; `pid` (the daemon's own ready message) only where it is a whole number
+    audit: (rec) => { const t = new Date().toISOString(), line = { t, node: 'local', outcome: rec.kind, ...pick(rec, ['identity', 'key', 'labels', 'size', 'permission', 'why', 'code', 'signal', 'inWindow', 'crashes']) };
+      if (rec.t !== undefined) line.msg = NAME.test(String(rec.t)) ? String(rec.t) : null;
+      if (rec.pid !== undefined) line.pid = Number.isInteger(rec.pid) ? rec.pid : null;
+      if (rec.runId !== undefined) line.runId = (typeof rec.runId === 'string' || typeof rec.runId === 'number') && ID.test(String(rec.runId)) ? rec.runId : null;
+      Object.assign(line, { t, node: 'local', outcome: rec.kind }); return writeLine(line); } });
   // 1.3.0: mail settings come from the environment (the live .env, written by the owner); a problem turns mail OFF, never the server
   const mailProblems = [];
   let mailAllow = [], adapter = null;
@@ -210,10 +228,6 @@ function create(opts = {}) {
     }
   }
   let who = new Map();                     // identity name → login ID, for the audit's "who"
-  // 1.1.0: one audit line is at most 4 KB — long fields are cut, and the line says so
-  const cap = (j) => { let s = JSON.stringify(j); if (s.length <= 4096) return s;
-    for (const k of Object.keys(j)) if (typeof j[k] === 'string' && j[k].length > 200) j[k] = j[k].slice(0, 200) + '…';
-    j.truncated = true; s = JSON.stringify(j); return s.length <= 4096 ? s : JSON.stringify({ t: j.t, node: j.node, outcome: j.outcome, code: j.code, who: j.who, truncated: true }); };
   const appendLog = appender(LOG);                                  // 1.6.0 (F05): every audit line is on disk (fsync) before it returns
   const writeLine = (obj) => appendLog(cap(obj));
   // 1.3.0: the outbox (act-files/.outbox/ — a dot folder, so no identity can own it); its lines go to logs/act.jsonl
@@ -464,4 +478,4 @@ function create(opts = {}) {
     engine, outbox, mailbox, scheduler, schedTick, webOff, mailProblems, schedProblems, stop };   // 1.3.0
 }
 
-module.exports = { create, modelAdapter, parseGrants, idName, isPerson, GRANTS_MAX };
+module.exports = { create, modelAdapter, parseGrants, idName, isPerson, GRANTS_MAX, auditLine: cap };   // 1.10.0: auditLine, for the tests
